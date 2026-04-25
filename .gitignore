@@ -8,7 +8,6 @@
 .vs/
 build/
 .vs/
-
 # Android specific
 **/android/**/gradle-wrapper.jar
 **/android/.gradle
