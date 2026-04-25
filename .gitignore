@@ -6,6 +6,7 @@
 .pub-cache/
 .pub/
 build/
+.vs/
 
 # Android specific
 **/android/**/gradle-wrapper.jar
