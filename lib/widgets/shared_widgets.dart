@@ -1,0 +1,615 @@
+import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
+import '../constants/app_constants.dart';
+import '../data/models.dart';
+
+// ─── Gradient Background ──────────────────────────────────────────────────────
+
+class AppBackground extends StatelessWidget {
+  final Widget child;
+  const AppBackground({super.key, required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      constraints: const BoxConstraints.expand(),
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          colors: [AppColors.gradientStart, AppColors.gradientEnd],
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+        ),
+      ),
+      child: child,
+    );
+  }
+}
+
+// ─── Header with gradient ─────────────────────────────────────────────────────
+
+class AppHeader extends StatelessWidget {
+  final String title;
+  final List<Widget>? actions;
+  final Widget? bottom;
+  final double bottomHeight;
+
+  const AppHeader({
+    super.key,
+    required this.title,
+    this.actions,
+    this.bottom,
+    this.bottomHeight = 0,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final topPad = MediaQuery.of(context).padding.top;
+    return Container(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          colors: [AppColors.darkBlue, AppColors.mediumBlue],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.only(
+          bottomLeft: Radius.circular(28),
+          bottomRight: Radius.circular(28),
+        ),
+      ),
+      padding:
+          EdgeInsets.only(top: topPad + 12, bottom: bottom != null ? 0 : 20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: AppSizes.paddingM),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    title,
+                    style: GoogleFonts.poppins(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+                if (actions != null) ...actions!,
+              ],
+            ),
+          ),
+          if (bottom != null) bottom!,
+          if (bottom != null) const SizedBox(height: 16),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── Status Badge ─────────────────────────────────────────────────────────────
+
+class StatusBadge extends StatelessWidget {
+  final ItemStatus status;
+  const StatusBadge({super.key, required this.status});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: status.bgColor,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Text(
+        status.label,
+        style: GoogleFonts.poppins(
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
+          color: status.color,
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Expiry Chip ──────────────────────────────────────────────────────────────
+
+class ExpiryChip extends StatelessWidget {
+  final int daysLeft;
+  const ExpiryChip({super.key, required this.daysLeft});
+
+  @override
+  Widget build(BuildContext context) {
+    Color bg;
+    Color fg;
+    String label;
+
+    if (daysLeft < 0) {
+      bg = AppColors.expiredBg;
+      fg = AppColors.expired;
+      label = 'Expired';
+    } else if (daysLeft == 0) {
+      bg = AppColors.expiredBg;
+      fg = AppColors.expired;
+      label = 'Today';
+    } else if (daysLeft <= 3) {
+      bg = AppColors.expiringBg;
+      fg = AppColors.expiring;
+      label = '${daysLeft}d left';
+    } else {
+      bg = AppColors.freshBg;
+      fg = AppColors.fresh;
+      label = '${daysLeft}d left';
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration:
+          BoxDecoration(color: bg, borderRadius: BorderRadius.circular(20)),
+      child: Text(label,
+          style: GoogleFonts.poppins(
+              fontSize: 11, fontWeight: FontWeight.w600, color: fg)),
+    );
+  }
+}
+
+// ─── Food Item Card ───────────────────────────────────────────────────────────
+
+class FoodItemCard extends StatelessWidget {
+  final FoodItem item;
+  final VoidCallback? onEdit;
+  final VoidCallback? onDelete;
+  final VoidCallback? onTap;
+
+  const FoodItemCard({
+    super.key,
+    required this.item,
+    this.onEdit,
+    this.onDelete,
+    this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 10),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(AppSizes.radiusL),
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: Row(
+                children: [
+                  // Thumbnail
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(AppSizes.radiusS),
+                    child: Image.asset(
+                      item.imagePath ?? 'assets/images/placeholderfood.png',
+                      width: 52,
+                      height: 52,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => Container(
+                        width: 52,
+                        height: 52,
+                        color: AppColors.lightBlue,
+                        child: Icon(item.category.icon,
+                            color: item.category.color, size: 26),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  // Info
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          item.name,
+                          style: GoogleFonts.poppins(
+                              fontWeight: FontWeight.w600, fontSize: 15),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          '${item.category.label} • ${item.quantity} ${item.weight != null ? "${item.weight} ${item.weightUnit}" : "pcs"}',
+                          style: GoogleFonts.poppins(
+                              fontSize: 12, color: AppColors.textSecondary),
+                        ),
+                      ],
+                    ),
+                  ),
+                  ExpiryChip(daysLeft: item.daysUntilExpiry),
+                ],
+              ),
+            ),
+            // Action row
+            Container(
+              decoration: const BoxDecoration(
+                border: Border(top: BorderSide(color: AppColors.divider)),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: TextButton.icon(
+                      onPressed: onEdit,
+                      icon: const Icon(Icons.edit_outlined, size: 16),
+                      label: Text('Edit',
+                          style: GoogleFonts.poppins(fontSize: 13)),
+                      style: TextButton.styleFrom(
+                          foregroundColor: AppColors.mediumBlue),
+                    ),
+                  ),
+                  Container(width: 1, height: 36, color: AppColors.divider),
+                  Expanded(
+                    child: TextButton.icon(
+                      onPressed: onDelete,
+                      icon: const Icon(Icons.delete_outline, size: 16),
+                      label: Text('Delete',
+                          style: GoogleFonts.poppins(fontSize: 13)),
+                      style: TextButton.styleFrom(
+                          foregroundColor: AppColors.expired),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Category Chip Tabs ───────────────────────────────────────────────────────
+
+class CategoryTabs extends StatelessWidget {
+  final String selected;
+  final List<String> categories;
+  final ValueChanged<String> onChanged;
+
+  const CategoryTabs({
+    super.key,
+    required this.selected,
+    required this.categories,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 40,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: AppSizes.paddingM),
+        itemCount: categories.length,
+        separatorBuilder: (_, __) => const SizedBox(width: 8),
+        itemBuilder: (context, i) {
+          final cat = categories[i];
+          final isSelected = cat == selected;
+          return GestureDetector(
+            onTap: () => onChanged(cat),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              decoration: BoxDecoration(
+                color: isSelected ? AppColors.mediumBlue : Colors.white,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: isSelected ? AppColors.mediumBlue : AppColors.divider,
+                ),
+              ),
+              child: Text(
+                cat,
+                style: GoogleFonts.poppins(
+                  fontSize: 13,
+                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                  color: isSelected ? Colors.white : AppColors.textPrimary,
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+// ─── Section Header ───────────────────────────────────────────────────────────
+
+class SectionHeader extends StatelessWidget {
+  final String title;
+  final Widget? trailing;
+  final Color? textColor;
+
+  const SectionHeader(
+      {super.key, required this.title, this.trailing, this.textColor});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              title,
+              style: GoogleFonts.poppins(
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+                color: textColor ?? AppColors.textPrimary,
+              ),
+            ),
+          ),
+          if (trailing != null) trailing!,
+        ],
+      ),
+    );
+  }
+}
+
+// ─── Delete Confirmation Modal ────────────────────────────────────────────────
+
+Future<bool?> showDeleteConfirmation(BuildContext context, String itemName) {
+  return showDialog<bool>(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppSizes.radiusXL)),
+      title: Text('Delete Item',
+          style: GoogleFonts.poppins(fontWeight: FontWeight.w700)),
+      content: Text(
+        'Are you sure you want to delete "$itemName"? This action cannot be undone.',
+        style:
+            GoogleFonts.poppins(fontSize: 14, color: AppColors.textSecondary),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(ctx, false),
+          child: Text('Cancel',
+              style: GoogleFonts.poppins(color: AppColors.textSecondary)),
+        ),
+        ElevatedButton(
+          onPressed: () => Navigator.pop(ctx, true),
+          style: ElevatedButton.styleFrom(backgroundColor: AppColors.expired),
+          child:
+              Text('Delete', style: GoogleFonts.poppins(color: Colors.white)),
+        ),
+      ],
+    ),
+  );
+}
+
+// ─── Blue Primary Button ──────────────────────────────────────────────────────
+
+class PrimaryButton extends StatelessWidget {
+  final String label;
+  final VoidCallback? onPressed;
+  final bool isLoading;
+  final IconData? icon;
+
+  const PrimaryButton({
+    super.key,
+    required this.label,
+    this.onPressed,
+    this.isLoading = false,
+    this.icon,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton(
+        onPressed: isLoading ? null : onPressed,
+        child: isLoading
+            ? const SizedBox(
+                height: 20,
+                width: 20,
+                child: CircularProgressIndicator(
+                    strokeWidth: 2, color: Colors.white),
+              )
+            : Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  if (icon != null) ...[
+                    Icon(icon, size: 18),
+                    const SizedBox(width: 8)
+                  ],
+                  Text(label),
+                ],
+              ),
+      ),
+    );
+  }
+}
+
+// ─── White Outlined Button ────────────────────────────────────────────────────
+
+class SecondaryButton extends StatelessWidget {
+  final String label;
+  final VoidCallback? onPressed;
+  final IconData? icon;
+
+  const SecondaryButton(
+      {super.key, required this.label, this.onPressed, this.icon});
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: double.infinity,
+      child: OutlinedButton(
+        style: OutlinedButton.styleFrom(
+          backgroundColor: Colors.white,
+        ),
+        onPressed: onPressed,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            if (icon != null) ...[
+              Icon(icon, size: 18),
+              const SizedBox(width: 8)
+            ],
+            Text(label),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Profile Avatar ───────────────────────────────────────────────────────────
+
+class ProfileAvatar extends StatelessWidget {
+  final String initials;
+  final double size;
+  final String? avatarPath;
+
+  const ProfileAvatar(
+      {super.key, required this.initials, this.size = 48, this.avatarPath});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          colors: [AppColors.mediumBlue, AppColors.darkBlue],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        shape: BoxShape.circle,
+      ),
+      alignment: Alignment.center,
+      child: ClipOval(
+        child: Image.asset(
+          avatarPath ?? 'assets/images/placeholderPP.png',
+          width: size,
+          height: size,
+          fit: BoxFit.cover,
+          errorBuilder: (_, __, ___) => Container(
+            alignment: Alignment.center,
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [AppColors.mediumBlue, AppColors.darkBlue],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+            ),
+            child: Text(
+              initials,
+              style: GoogleFonts.poppins(
+                color: Colors.white,
+                fontWeight: FontWeight.w700,
+                fontSize: size * 0.35,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Search Bar ───────────────────────────────────────────────────────────────
+
+class AppSearchBar extends StatelessWidget {
+  final TextEditingController controller;
+  final String hint;
+  final VoidCallback? onFilterTap;
+
+  const AppSearchBar(
+      {super.key,
+      required this.controller,
+      this.hint = 'Search...',
+      this.onFilterTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 48,
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.9),
+        borderRadius: BorderRadius.circular(AppSizes.radiusL),
+        border: Border.all(color: AppColors.lightBlue),
+      ),
+      child: Row(
+        children: [
+          const SizedBox(width: 12),
+          const Icon(Icons.search, color: AppColors.textSecondary, size: 20),
+          const SizedBox(width: 8),
+          Expanded(
+            child: TextField(
+              controller: controller,
+              style: GoogleFonts.poppins(fontSize: 14),
+              decoration: InputDecoration(
+                hintText: hint,
+                hintStyle: GoogleFonts.poppins(
+                    fontSize: 14, color: AppColors.textSecondary),
+                border: InputBorder.none,
+                enabledBorder: InputBorder.none, // ← ADD
+                focusedBorder: InputBorder.none,
+                isDense: true,
+                contentPadding: EdgeInsets.zero,
+                fillColor: Colors.transparent,
+                filled: false,
+              ),
+            ),
+          ),
+          if (onFilterTap != null)
+            IconButton(
+              onPressed: onFilterTap,
+              icon:
+                  const Icon(Icons.tune, color: AppColors.mediumBlue, size: 20),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── Settings List Tile ───────────────────────────────────────────────────────
+
+class SettingsTile extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String? subtitle;
+  final Widget? trailing;
+  final VoidCallback? onTap;
+  final bool isBold;
+
+  const SettingsTile({
+    super.key,
+    required this.icon,
+    required this.title,
+    this.subtitle,
+    this.trailing,
+    this.onTap,
+    this.isBold = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      leading: Icon(icon, color: AppColors.mediumBlue, size: 22),
+      title: Text(
+        title,
+        style: GoogleFonts.poppins(
+          fontSize: 14,
+          fontWeight: isBold ? FontWeight.w600 : FontWeight.w500,
+        ),
+      ),
+      subtitle: subtitle != null
+          ? Text(subtitle!,
+              style: GoogleFonts.poppins(
+                  fontSize: 12, color: AppColors.textSecondary))
+          : null,
+      trailing: trailing ??
+          const Icon(Icons.chevron_right, color: AppColors.textSecondary),
+      onTap: onTap,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+    );
+  }
+}
