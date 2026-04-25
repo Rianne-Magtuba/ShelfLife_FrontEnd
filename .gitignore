@@ -5,6 +5,7 @@
 .packages
 .pub-cache/
 .pub/
+.vs/
 build/
 .vs/
 # Android specific
