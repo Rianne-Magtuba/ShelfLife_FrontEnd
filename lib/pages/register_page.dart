@@ -4,6 +4,8 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../constants/app_constants.dart';
+import '../data/models/auth_models.dart';
+import '../data/services/auth_service.dart';
 import '../widgets/shared_widgets.dart';
 import '../app/router.dart';
 
@@ -67,6 +69,10 @@ class _RegisterPageState extends State<RegisterPage> {
     }
   }
 
+  // register_page.dart - only _register() changes
+
+  String? _errorMessage;
+
   void _register() async {
     if (!_formKey.currentState!.validate()) return;
     if (!_agreeTerms) {
@@ -75,11 +81,36 @@ class _RegisterPageState extends State<RegisterPage> {
       );
       return;
     }
-    setState(() => _loading = true);
-    await Future.delayed(const Duration(seconds: 1));
-    if (!mounted) return;
-    setState(() => _loading = false);
-    context.go(AppRoutes.home);
+
+    setState(() {
+      _loading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      final authService = AuthService();
+      await authService.register(
+        RegisterRequest(
+          username: _usernameCtrl.text.trim(),
+          email: _emailCtrl.text.trim(),
+          password: _passCtrl.text,
+        ),
+      );
+      if (!mounted) return;
+      // Registration succeeded — send them to login
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Account created! Please log in.')),
+      );
+      context.go(AppRoutes.login);
+
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _errorMessage = e.toString().replaceFirst('Exception: ', '');
+      });
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
   }
 
   @override
@@ -293,12 +324,34 @@ class _RegisterPageState extends State<RegisterPage> {
                         ],
                       ).animate().fadeIn(delay: 350.ms),
                       const SizedBox(height: 24),
+                      if (_errorMessage != null) ...[
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: AppColors.expired.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(AppSizes.radiusS),
+                            border: Border.all(color: AppColors.expired.withOpacity(0.4)),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.error_outline, color: AppColors.expired, size: 18),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  _errorMessage!,
+                                  style: GoogleFonts.poppins(fontSize: 13, color: AppColors.expired),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                      ],
                       PrimaryButton(
-                              label: 'Create Account',
-                              onPressed: _register,
-                              isLoading: _loading)
-                          .animate()
-                          .fadeIn(delay: 400.ms),
+                        label: 'Create Account',
+                        onPressed: _register,
+                        isLoading: _loading,
+                      ).animate().fadeIn(delay: 400.ms),
                       const SizedBox(height: 20),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,

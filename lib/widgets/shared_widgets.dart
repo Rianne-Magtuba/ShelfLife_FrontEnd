@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../constants/app_constants.dart';
-import '../data/models.dart';
+import '../data/models/models.dart';
 
 // ─── Gradient Background ──────────────────────────────────────────────────────
 
@@ -610,6 +610,73 @@ class SettingsTile extends StatelessWidget {
           const Icon(Icons.chevron_right, color: AppColors.textSecondary),
       onTap: onTap,
       contentPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+    );
+  }
+}
+/// Reusable product name + category pair.
+/// Used by both AddItemPage and RegisterProductPage.
+/// This avoids duplicating the field styling and dropdown items.
+class ProductBasicFields extends StatelessWidget {
+  final TextEditingController nameCtrl;
+  final String selectedCategory;
+  final ValueChanged<String?> onCategoryChanged;
+  final String? nameLabelOverride;
+
+  const ProductBasicFields({
+    super.key,
+    required this.nameCtrl,
+    required this.selectedCategory,
+    required this.onCategoryChanged,
+    this.nameLabelOverride,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        TextFormField(
+          controller: nameCtrl,
+          textCapitalization: TextCapitalization.words,
+          decoration: InputDecoration(
+            labelText: nameLabelOverride ?? 'Product Name',
+            hintText: 'e.g. Milk, Bread, Yogurt',
+            prefixIcon: const Icon(Icons.label_outline, size: 18),
+          ),
+          validator: (v) => (v == null || v.trim().isEmpty)
+              ? 'Product name is required'
+              : null,
+        ),
+        const SizedBox(height: 12),
+        DropdownButtonFormField<String>(
+          value: selectedCategory,
+          decoration: const InputDecoration(labelText: 'Category'),
+          items: AppStrings.categoriesNoAll
+              .map((c) => DropdownMenuItem(
+            value: c,
+            child: Row(
+              children: [
+                // Reuse the category icon and color from your existing extension
+                Icon(
+                  ItemCategory.values
+                      .firstWhere((e) => e.label == c,
+                      orElse: () => ItemCategory.others)
+                      .icon,
+                  size: 18,
+                  color: ItemCategory.values
+                      .firstWhere((e) => e.label == c,
+                      orElse: () => ItemCategory.others)
+                      .color,
+                ),
+                const SizedBox(width: 8),
+                Text(c, style: GoogleFonts.poppins(fontSize: 14)),
+              ],
+            ),
+          ))
+              .toList(),
+          onChanged: onCategoryChanged,
+          validator: (v) => v == null ? 'Required' : null,
+        ),
+      ],
     );
   }
 }

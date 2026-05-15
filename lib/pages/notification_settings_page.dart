@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../constants/app_constants.dart';
 import '../widgets/shared_widgets.dart';
-import '../data/models.dart';
+import '../data/models/models.dart';
 import '../data/mock_data.dart';
 
 class NotificationSettingsPage extends StatefulWidget {

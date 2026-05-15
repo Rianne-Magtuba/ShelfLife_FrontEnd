@@ -9,7 +9,15 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
- 
+
+ #backend connections
+  flutter_secure_storage: ^9.2.2
+  http: ^1.2.1
+  flutter_local_notifications: ^17.2.2
+  timezone: ^0.9.4
+  hive: ^2.2.3
+  hive_flutter: ^1.1.0
+
   # Navigation
   go_router: ^13.2.0
  
