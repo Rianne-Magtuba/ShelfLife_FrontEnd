@@ -2,7 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest.dart' as tz_data;
-import '../models/models.dart';
+import '../../common/entities/entities.dart';  // ← updated import
 
 class LocalNotificationService {
   static final _plugin = FlutterLocalNotificationsPlugin();

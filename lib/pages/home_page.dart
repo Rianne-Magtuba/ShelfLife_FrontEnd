@@ -1,58 +1,159 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import '../constants/app_constants.dart';
 import '../widgets/shared_widgets.dart';
-import '../data/models/models.dart';
-import '../data/mock_data.dart';
+import '../core/common/entities/entities.dart';
+import '../core/business/providers/inventory_provider.dart';
 import '../app/router.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
-class HomePage extends StatelessWidget {
+class HomePage extends ConsumerStatefulWidget  {
   const HomePage({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final items = MockData.items;
-    final user = MockData.user;
+  ConsumerState<HomePage> createState() => _HomePageState();
+}
 
-    final total = items.length;
-    final expiringSoon =
-        items.where((i) => i.status == ItemStatus.expiringSoon).length;
-    final expired = items.where((i) => i.status == ItemStatus.expired).length;
-    final urgentItems = items
-        .where((i) => i.status != ItemStatus.fresh)
-        .toList()
-      ..sort((a, b) => a.daysUntilExpiry.compareTo(b.daysUntilExpiry));
-    final recentItems = [...items]
-      ..sort((a, b) => b.dateAdded.compareTo(a.dateAdded));
-    final recent5 = recentItems.take(5).toList();
+class _HomePageState extends ConsumerState<HomePage> {
+  final _storage = const FlutterSecureStorage();
+  String _username = '';
+  String _email = '';
 
-    return AppBackground(
-      child: Column(
-        children: [
-          _HomeHeader(user: user, expiredCount: expired),
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(
-                  AppSizes.paddingM, 16, AppSizes.paddingM, 100),
+  @override
+  void initState() {
+    super.initState();
+    _loadUser();
+  }
+
+  Future<void> _loadUser() async {
+    final username = await _storage.read(key: 'username') ?? '';
+    final email    = await _storage.read(key: 'email')    ?? '';
+    if (mounted) setState(() {
+      _username = username;
+      _email    = email;
+    });
+  }
+
+  @override
+Widget build(BuildContext context) {
+  final inventoryAsync = ref.watch(inventoryProvider);
+  final notifCount = ref.watch(notificationsProvider).length;
+
+  return AppBackground(
+    child: Column(
+      children: [
+        _HomeHeader(
+          username: _username,
+          expiredCount: 0,
+          notifCount: notifCount,
+        ),
+        Expanded(
+          child: inventoryAsync.when(
+            loading: () => const Center(child: CircularProgressIndicator()),
+            // ─── 1. UPDATED ERROR STATE WITH RETRY BUTTON ───
+            error: (e, _) => Center(
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  // ── Stats bar ──
-                  // FIX: Each _StatCard now navigates to /inventory when tapped.
-                  _StatsBar(
-                    total: total,
-                    expiringSoon: expiringSoon,
-                    expired: expired,
-                  ).animate().fadeIn().slideY(begin: 0.2),
-                  const SizedBox(height: 20),
+                  const Icon(Icons.wifi_off_rounded, size: 48, color: Colors.grey),
+                  const SizedBox(height: 16),
+                  Text('Could not connect',
+                      style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w600)),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 8),
+                    child: Text(e.toString(),
+                        textAlign: TextAlign.center,
+                        style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey)),
+                  ),
+                  const SizedBox(height: 16),
+                  ElevatedButton.icon(
+                    // 👇 This line is the magic. It forces Riverpod to wipe the cache and run getInventory() again!
+                    onPressed: () => ref.invalidate(inventoryProvider),
+                    icon: const Icon(Icons.refresh),
+                    label: const Text('Retry'),
+                  ),
+                ],
+              ),
+            ),
 
-                  // ── Urgent alerts ──
-                  if (urgentItems.isNotEmpty) ...[
+            data: (items) {
+              if (items.isEmpty) {
+                // ── Empty state ──
+                return Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.add_box_outlined,
+                          size: 72, color: AppColors.lightBlue),
+                      const SizedBox(height: 16),
+                      Text('Add your Product',
+                          style: GoogleFonts.poppins(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.textSecondary)),
+                      const SizedBox(height: 8),
+                      Text('Tap the + button to add your first item',
+                          style: GoogleFonts.poppins(
+                              fontSize: 13,
+                              color: AppColors.textSecondary)),
+                    ],
+                  ).animate().fadeIn(),
+                );
+              }
+
+              final total        = items.length;
+              final expiringSoon = items.where((i) => i.status == ItemStatus.expiringSoon).length;
+              final expired      = items.where((i) => i.status == ItemStatus.expired).length;
+              final urgentItems  = items.where((i) => i.status != ItemStatus.fresh).toList()
+                ..sort((a, b) => a.daysUntilExpiry.compareTo(b.daysUntilExpiry));
+              final recent5 = ([...items]
+                ..sort((a, b) => b.dateAdded.compareTo(a.dateAdded)))
+                  .take(5).toList();
+
+              // ─── 2. WRAPPED IN REFRESH INDICATOR ───
+              return RefreshIndicator(
+                  onRefresh: () async {
+                    // 👇 Allows users to pull down on the list to fetch fresh data
+                    ref.invalidate(inventoryProvider);
+                  },
+                  child: SingleChildScrollView(
+                    // 👇 AlwaysScrollableScrollPhysics is required for pull-to-refresh to work
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.fromLTRB(
+                        AppSizes.paddingM, 16, AppSizes.paddingM, 100),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _StatsBar(
+                          total: total,
+                          expiringSoon: expiringSoon,
+                          expired: expired,
+                        ).animate().fadeIn().slideY(begin: 0.2),
+                    const SizedBox(height: 20),
+                    if (urgentItems.isNotEmpty) ...[
+                      SectionHeader(
+                        title: '⚠️ Urgent Alerts',
+                        trailing: TextButton(
+                          onPressed: () => context.go(AppRoutes.inventory),
+                          child: Text('View all',
+                              style: GoogleFonts.poppins(
+                                  fontSize: 12, color: AppColors.mediumBlue)),
+                        ),
+                      ),
+                      ...urgentItems.take(3).map(
+                        (item) => _UrgentAlertCard(
+                          item: item,
+                          onTap: () => context.push(AppRoutes.itemDetail, extra: item.id),
+                        ).animate().fadeIn(delay: 100.ms).slideX(begin: -0.1),
+                      ),
+                      const SizedBox(height: 20),
+                    ],
                     SectionHeader(
-                      title: '⚠️ Urgent Alerts',
+                      title: '📦 Recently Added',
                       trailing: TextButton(
                         onPressed: () => context.go(AppRoutes.inventory),
                         child: Text('View all',
@@ -60,65 +161,47 @@ class HomePage extends StatelessWidget {
                                 fontSize: 12, color: AppColors.mediumBlue)),
                       ),
                     ),
-                    // FIX: Pass onTap so the card navigates to item detail.
-                    ...urgentItems.take(3).map(
-                          (item) => _UrgentAlertCard(
-                            item: item,
-                            onTap: () => context.push(
-                              AppRoutes.itemDetail,
-                              extra: item.id,
-                            ),
-                          ).animate().fadeIn(delay: 100.ms).slideX(begin: -0.1),
-                        ),
-                    const SizedBox(height: 20),
-                  ],
-
-                  // ── Recent items ──
-                  SectionHeader(
-                    title: '📦 Recently Added',
-                    trailing: TextButton(
-                      onPressed: () => context.go(AppRoutes.inventory),
-                      child: Text('View all',
-                          style: GoogleFonts.poppins(
-                              fontSize: 12, color: AppColors.mediumBlue)),
+                    ...recent5.map(
+                      (item) => _RecentItemTile(
+                        item: item,
+                        onTap: () => context.push(AppRoutes.itemDetail, extra: item.id),
+                      ).animate().fadeIn(delay: 150.ms),
                     ),
-                  ),
-                  // FIX: Pass onTap so the tile navigates to item detail.
-                  ...recent5.map(
-                    (item) => _RecentItemTile(
-                      item: item,
-                      onTap: () => context.push(
-                        AppRoutes.itemDetail,
-                        extra: item.id,
-                      ),
-                    ).animate().fadeIn(delay: 150.ms),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
+              );
+            },
           ),
-        ],
-      ),
-    );
-  }
+        ),
+      ],
+    ),
+  );
+}
 }
 
 // ─── Home Header ──────────────────────────────────────────────────────────────
 
 class _HomeHeader extends StatelessWidget {
-  final UserProfile user;
+  final String username;
   final int expiredCount;
+  final int notifCount;
 
-  const _HomeHeader({required this.user, required this.expiredCount});
+  const _HomeHeader({
+    required this.username,
+    required this.expiredCount,
+    required this.notifCount,  // ← add this
+  });
 
   @override
   Widget build(BuildContext context) {
     final topPad = MediaQuery.of(context).padding.top;
-    final notifCount = MockData.notifications.where((n) => !n.isRead).length;
+
+    // Initials from username
+    final initials = username.isNotEmpty ? username[0].toUpperCase() : '?';
 
     return Container(
-      padding:
-          EdgeInsets.only(top: topPad + 12, left: 20, right: 20, bottom: 24),
+      padding: EdgeInsets.only(top: topPad + 12, left: 20, right: 20, bottom: 24),
       decoration: const BoxDecoration(
         gradient: LinearGradient(
           colors: [AppColors.darkBlue, AppColors.mediumBlue],
@@ -132,23 +215,45 @@ class _HomeHeader extends StatelessWidget {
       ),
       child: Row(
         children: [
-          ProfileAvatar(initials: user.initials),
+          // ── Default profile icon instead of image ──
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.2),
+              shape: BoxShape.circle,
+              border: Border.all(color: Colors.white38, width: 1.5),
+            ),
+            child: Center(
+              child: Text(
+                initials,
+                style: GoogleFonts.poppins(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Hello, ${user.displayName?.split(' ').first ?? user.username}! 👋',
+                  'Hello, $username! 👋',
                   style: GoogleFonts.poppins(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                      color: Colors.white),
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                  ),
                 ),
                 Text(
                   DateFormat('EEEE, MMMM d').format(DateTime.now()),
-                  style:
-                      GoogleFonts.poppins(fontSize: 12, color: Colors.white70),
+                  style: GoogleFonts.poppins(
+                    fontSize: 12,
+                    color: Colors.white70,
+                  ),
                 ),
               ],
             ),

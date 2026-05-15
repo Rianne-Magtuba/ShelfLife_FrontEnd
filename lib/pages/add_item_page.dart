@@ -6,7 +6,11 @@ import 'package:intl/intl.dart';
 import 'package:permission_handler/permission_handler.dart';
 import '../constants/app_constants.dart';
 import '../widgets/shared_widgets.dart';
-import '../data/models/models.dart';
+import '../core/common/entities/entities.dart';
+import '../core/business/dtos/inventory_dto.dart';
+import '../core/business/dtos/product_dto.dart';
+import '../core/business/services/product_service.dart';
+import '../core/business/providers/inventory_provider.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
 class AddItemPage extends StatefulWidget {
@@ -16,12 +20,14 @@ class AddItemPage extends StatefulWidget {
   State<AddItemPage> createState() => _AddItemPageState();
 }
 
+
 class _AddItemPageState extends State<AddItemPage>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   final _formKey = GlobalKey<FormState>();
 
   // Form state
+  final _barcodeCtrl = TextEditingController();
   final _nameCtrl = TextEditingController();
   ItemCategory _category = ItemCategory.fridge;
   int _quantity = 1;
@@ -45,6 +51,7 @@ class _AddItemPageState extends State<AddItemPage>
 
   @override
   void dispose() {
+    _barcodeCtrl.dispose();
     _tabController.dispose();
     _nameCtrl.dispose();
     _weightCtrl.dispose();
@@ -199,6 +206,7 @@ class _AddItemPageState extends State<AddItemPage>
                 children: [
                   // Manual tab
                   _ManualForm(
+                    barcodeCtrl: _barcodeCtrl,
                     formKey: _formKey,
                     nameCtrl: _nameCtrl,
                     category: _category,
@@ -231,29 +239,41 @@ class _AddItemPageState extends State<AddItemPage>
                   // Scan tab
                   _ScanTab(
                     onManualEntry: () => _tabController.animateTo(0),
-                    onBarcodeScanned: (barcode) {
-                      // Close the camera sheet after 800ms (lets user see the success overlay)
-                      Future.delayed(const Duration(milliseconds: 800), () {
-                        if (mounted) Navigator.of(context).pop();
-                      });
+                   onBarcodeScanned: (barcode) async {
+  _tabController.animateTo(0);
+  setState(() {
+    _barcodeCtrl.text = barcode;
+    _nameCtrl.text = 'Looking up product...';
+  });
 
-                      // TODO: later, call your ProductDataService to look up this barcode
-                      // and auto-fill _nameCtrl.text with the product name from Firestore
-                      // For now, just put the barcode in the name field so the user can see it worked
-                      setState(() {
-                        _nameCtrl.text = 'Barcode: $barcode';
-                      });
+  try {
+    final product = await ProductService().getProduct(barcode);
+    if (!mounted) return;
 
-                      // Switch to the manual form so user can fill in expiry date + other fields
-                      _tabController.animateTo(0);
-
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('Barcode scanned: $barcode — please fill in the expiry date'),
-                          duration: const Duration(seconds: 3),
-                        ),
-                      );
-                    },
+    if (product != null) {
+      // Found — auto-fill name and category
+      setState(() {
+        _nameCtrl.text = product.name;
+        _category = ItemCategory.values.firstWhere(
+          (c) => c.label == product.category,
+          orElse: () => ItemCategory.fridge,
+        );
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('${product.name} found — fill in expiry date')),
+      );
+    } else {
+      // Not found — just put barcode in field, let user type name
+      setState(() => _nameCtrl.text = '');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Product not found — please enter details manually')),
+      );
+    }
+  } catch (e) {
+    if (!mounted) return;
+    setState(() => _nameCtrl.text = '');
+  }
+},
                   ),
                 ],
               ),
@@ -269,9 +289,11 @@ class _AddItemPageState extends State<AddItemPage>
 // Must be StatefulWidget so dropdowns and toggles render correctly
 
 class _ManualForm extends StatefulWidget {
+
   final GlobalKey<FormState> formKey;
   final TextEditingController nameCtrl,
       weightCtrl,
+      barcodeCtrl,
       shelfLifeCtrl,
       consumeWithinCtrl,
       priceCtrl,
@@ -290,6 +312,7 @@ class _ManualForm extends StatefulWidget {
   final VoidCallback onSave;
 
   const _ManualForm({
+    required this.barcodeCtrl,
     required this.formKey,
     required this.nameCtrl,
     required this.category,
@@ -336,8 +359,11 @@ class _ManualFormState extends State<_ManualForm>
 
           // ── Basic Information ─────────────────────────────────────────────
           const _SectionLabel('Basic Information'),
+
+
           ProductBasicFields(
             nameCtrl:          widget.nameCtrl,
+            barcodeCtrl:       widget.barcodeCtrl,
             selectedCategory:  widget.category.label,
             onCategoryChanged: (v) {
               if (v == null) return;
@@ -348,6 +374,7 @@ class _ManualFormState extends State<_ManualForm>
               widget.onCategoryChanged(cat);
             },
           ),
+
           // Quantity stepper
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),

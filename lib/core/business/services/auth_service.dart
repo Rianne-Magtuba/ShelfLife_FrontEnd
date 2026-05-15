@@ -1,0 +1,65 @@
+import 'dart:convert';
+import 'package:flutter/foundation.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import '../../common/interfaces/i_auth_service.dart';
+import '../dtos/user_dto.dart';
+import '../../data/services/api_client.dart';
+
+class AuthService implements IAuthService {
+  static const _storage = FlutterSecureStorage();
+
+  @override
+  Future<LoginResponse> login(LoginRequest request) async {
+    final response = await ApiClient.post(
+      '/api/auth/login',
+      request.toJson(),
+      requiresAuth: false,
+    );
+
+    if (response.statusCode == 200) {
+      final json   = jsonDecode(response.body) as Map<String, dynamic>;
+      final result = LoginResponse.fromJson(json);
+
+      await ApiClient.saveToken(result.token);
+      await _storage.write(key: 'user_id',  value: result.userId);
+      await _storage.write(key: 'username', value: result.username);
+      await _storage.write(key: 'email',    value: result.email);
+
+      return result;
+    } else if (response.statusCode == 401) {
+      throw Exception(ApiClient.parseError(response, 'Invalid email or password.'));
+    } else {
+      throw Exception(ApiClient.parseError(response, 'Login failed. Please try again.'));
+    }
+  }
+
+  @override
+  Future<void> register(RegisterRequest request) async {
+    final response = await ApiClient.post(
+      '/api/auth/register',
+      request.toJson(),
+      requiresAuth: false,
+    );
+
+    debugPrint('[Register] Status: ${response.statusCode}');
+    debugPrint('[Register] Body: ${response.body}');
+
+    if (response.statusCode == 200 || response.statusCode == 201) return;
+    if (response.statusCode == 409) {
+      throw Exception(ApiClient.parseError(response, 'An account with this email already exists.'));
+    } else if (response.statusCode == 400) {
+      throw Exception(ApiClient.parseError(response, 'Please check your details and try again.'));
+    } else {
+      throw Exception(ApiClient.parseError(response, 'Registration failed. Please try again.'));
+    }
+  }
+
+  @override
+  Future<void> logout() async => ApiClient.clearAll();
+
+  @override
+  Future<bool> isLoggedIn() async {
+    final token = await ApiClient.getToken();
+    return token != null && token.isNotEmpty;
+  }
+}

@@ -1,33 +1,30 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../constants/app_constants.dart';
 import '../widgets/shared_widgets.dart';
-import '../data/models/models.dart';
-import '../data/mock_data.dart';
+import '../core/common/entities/entities.dart';
+import '../core/business/providers/inventory_provider.dart';
 import '../app/router.dart';
 
-class NotificationsPage extends StatefulWidget {
+class NotificationsPage extends ConsumerStatefulWidget {
   const NotificationsPage({super.key});
 
   @override
-  State<NotificationsPage> createState() => _NotificationsPageState();
+  ConsumerState<NotificationsPage> createState() => _NotificationsPageState();
 }
 
-class _NotificationsPageState extends State<NotificationsPage> {
-  List<AppNotification> _notifications = [];
+class _NotificationsPageState extends ConsumerState<NotificationsPage> {
+
 
   @override
   void initState() {
     super.initState();
-    _notifications = List.from(MockData.notifications);
   }
 
-  void _markAllRead() {
-    setState(() => _notifications =
-        _notifications.map((n) => n.copyWith(isRead: true)).toList());
-  }
+
 
   String _timeAgo(DateTime ts) {
     final diff = DateTime.now().difference(ts);
@@ -36,78 +33,68 @@ class _NotificationsPageState extends State<NotificationsPage> {
     return '${diff.inDays} days ago';
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final unreadCount = _notifications.where((n) => !n.isRead).length;
-    return AppBackground(
-      child: Column(
-        children: [
-          AppHeader(
-            title: 'Notifications ${unreadCount > 0 ? "($unreadCount)" : ""}',
-            actions: [
-              IconButton(
-                onPressed: () => context.push(AppRoutes.notificationSettings),
-                icon: const Icon(Icons.settings_outlined, color: Colors.white),
-              ),
-            ],
-            bottom: unreadCount > 0
-                ? Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
-                    child: GestureDetector(
-                      onTap: _markAllRead,
-                      child: Row(
-                        children: [
-                          const Icon(Icons.done_all,
-                              color: Colors.white70, size: 18),
-                          const SizedBox(width: 6),
-                          Text('Mark all as read',
-                              style: GoogleFonts.poppins(
-                                  fontSize: 13, color: Colors.white70)),
-                        ],
-                      ),
-                    ),
-                  )
-                : null,
-          ),
-          const SizedBox(height: 12),
-          Expanded(
-            child: _notifications.isEmpty
-                ? Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(Icons.notifications_none,
-                            size: 72, color: AppColors.lightBlue),
-                        const SizedBox(height: 16),
-                        Text('No alerts — your pantry is in good shape!',
-                            style: GoogleFonts.poppins(
-                                fontSize: 14, color: AppColors.textSecondary),
-                            textAlign: TextAlign.center),
-                      ],
-                    ).animate().fadeIn(),
-                  )
-                : ListView.separated(
-                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 100),
-                    itemCount: _notifications.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 10),
-                    itemBuilder: (context, i) {
-                      final notif = _notifications[i];
-                      return _NotificationCard(
-                        notif: notif,
-                        timeAgo: _timeAgo(notif.timestamp),
-                        onViewItem: () => context.push(AppRoutes.itemDetail,
-                            extra: notif.itemId),
-                        onRead: () => setState(() {
-                          _notifications[i] = notif.copyWith(isRead: true);
-                        }),
-                      ).animate().fadeIn(delay: (i * 50).ms).slideX(begin: 0.1);
-                    },
-                  ),
-          ),
-        ],
-      ),
-    );
-  }
+@override
+Widget build(BuildContext context) {
+
+  final notifications = ref.watch(notificationsProvider);
+  final unreadCount   = notifications.where((n) => !n.isRead).length;
+
+  return AppBackground(
+    child: Column(
+      children: [
+        AppHeader(
+          title: 'Notifications ${unreadCount > 0 ? "($unreadCount)" : ""}',
+          actions: [
+            IconButton(
+              onPressed: () => context.push(AppRoutes.notificationSettings),
+              icon: const Icon(Icons.settings_outlined, color: Colors.white),
+            ),
+          ],
+
+        ),
+        const SizedBox(height: 12),
+        Expanded(
+          child: notifications.isEmpty
+              ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.notifications_none,
+                          size: 72, color: AppColors.lightBlue),
+                      const SizedBox(height: 16),
+                      Text('No Notifications',    // ← changed
+                          style: GoogleFonts.poppins(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.textSecondary)),
+                      const SizedBox(height: 8),
+                      Text("Your pantry is in good shape!",
+                          style: GoogleFonts.poppins(
+                              fontSize: 13,
+                              color: AppColors.textSecondary)),
+                    ],
+                  ).animate().fadeIn(),
+                )
+              : ListView.separated(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 100),
+                  itemCount: notifications.length,
+                  separatorBuilder: (_, __) => const SizedBox(height: 10),
+                  itemBuilder: (context, i) {
+                    final notif = notifications[i];
+                    return _NotificationCard(
+                      notif: notif,
+                      timeAgo: _timeAgo(notif.timestamp),
+                      onViewItem: () => context.push(
+                          AppRoutes.itemDetail, extra: notif.itemId),
+                      onRead: () {}, // derived provider — no local isRead needed
+                    ).animate().fadeIn(delay: (i * 50).ms).slideX(begin: 0.1);
+                  },
+                ),
+        ),
+      ],
+    ),
+  );
+}
 }
 
 class _NotificationCard extends StatelessWidget {

@@ -4,8 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../constants/app_constants.dart';
 import '../widgets/shared_widgets.dart';
-import '../data/models/models.dart';
-import '../data/mock_data.dart';
+import '../core/common/entities/entities.dart';
 
 class NotificationSettingsPage extends StatefulWidget {
   const NotificationSettingsPage({super.key});
@@ -21,7 +20,12 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
   @override
   void initState() {
     super.initState();
-    _settings = MockData.notifSettings;
+    _settings = NotificationSettings(
+      enabled:           true,
+      alertLeadDays:     3,
+      dailyReminderTime: const TimeOfDay(hour: 8, minute: 0),
+      frequency:         'daily',
+    );
   }
 
   @override
