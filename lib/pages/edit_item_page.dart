@@ -7,7 +7,6 @@ import 'package:intl/intl.dart';
 import '../constants/app_constants.dart';
 import '../widgets/shared_widgets.dart';
 import '../core/common/entities/entities.dart';
-import '../core/business/dtos/inventory_dto.dart';
 import '../core/business/providers/inventory_provider.dart';
 
 class EditItemPage extends ConsumerStatefulWidget {

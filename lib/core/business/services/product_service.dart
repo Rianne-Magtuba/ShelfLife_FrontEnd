@@ -6,7 +6,7 @@ import '../../data/services/api_client.dart';
 class ProductService implements IProductService {
   @override
   Future<ProductResponse?> getProduct(String barcode) async {
-    final response = await ApiClient.get('/api/products/$barcode');
+    final response = await ApiClient.get('/api/Product/$barcode');
 
     if (response.statusCode == 200) {
       return ProductResponse.fromJson(jsonDecode(response.body) as Map<String, dynamic>);
@@ -19,7 +19,7 @@ class ProductService implements IProductService {
 
   @override
   Future<ProductResponse> registerProduct(ProductRequest request) async {
-    final response = await ApiClient.post('/api/products', request.toJson());
+    final response = await ApiClient.post('/api/Product', request.toJson());
 
     if (response.statusCode == 200 || response.statusCode == 201) {
       return ProductResponse.fromJson(jsonDecode(response.body) as Map<String, dynamic>);
