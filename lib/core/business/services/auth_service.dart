@@ -62,4 +62,26 @@ class AuthService implements IAuthService {
     final token = await ApiClient.getToken();
     return token != null && token.isNotEmpty;
   }
+
+  @override
+  Future<void> sendPasswordReset(ResetPasswordRequest request) async {
+    final response = await ApiClient.post(
+      '/api/auth/reset-password',
+      request.toJson(),
+      requiresAuth: false, // no token — user is logged out
+    );
+
+    if (response.statusCode == 200) return;
+
+    if (response.statusCode == 400) {
+      throw Exception(
+        ApiClient.parseError(response, 'Invalid email format.'),
+      );
+    }
+
+    throw Exception(
+      ApiClient.parseError(response, 'Could not send reset email. Please try again.'),
+    );
+  }
+
 }

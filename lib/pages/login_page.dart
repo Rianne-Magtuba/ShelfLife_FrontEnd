@@ -141,18 +141,51 @@ class _LoginPageState extends State<LoginPage> {
                   // Confirm
                   Expanded(
                     child: ElevatedButton(
-                      onPressed: () {
+                      onPressed: () async {
+                        // Read whatever the user typed in the email field above the dialog.
+                        final email = _emailCtrl.text.trim();
                         Navigator.of(ctx).pop();
-                        // TODO: call your forgot password API here
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(
-                              'Password reset email sent!',
-                              style: GoogleFonts.poppins(fontSize: 13),
+
+                        // Guard: nudge user to fill in email first.
+                        if (email.isEmpty) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                'Please enter your email in the field above first.',
+                                style: GoogleFonts.poppins(fontSize: 13),
+                              ),
+                              backgroundColor: AppColors.expired,
                             ),
-                            backgroundColor: const Color(0xFF4E7BB6),
-                          ),
-                        );
+                          );
+                          return;
+                        }
+
+                        try {
+                          await AuthService().sendPasswordReset(
+                            ResetPasswordRequest(email: email),
+                          );
+                          if (!context.mounted) return;
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                'If this email is registered, a reset link has been sent.',
+                                style: GoogleFonts.poppins(fontSize: 13),
+                              ),
+                              backgroundColor: AppColors.mediumBlue,
+                            ),
+                          );
+                        } catch (e) {
+                          if (!context.mounted) return;
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                e.toString().replaceFirst('Exception: ', ''),
+                                style: GoogleFonts.poppins(fontSize: 13),
+                              ),
+                              backgroundColor: AppColors.expired,
+                            ),
+                          );
+                        }
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF4E7BB6),

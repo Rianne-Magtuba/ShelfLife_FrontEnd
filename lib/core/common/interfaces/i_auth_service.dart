@@ -6,4 +6,5 @@ abstract class IAuthService {
   Future<void> register(RegisterRequest request);
   Future<void> logout();
   Future<bool> isLoggedIn();
+  Future<void> sendPasswordReset(ResetPasswordRequest request);
 }
