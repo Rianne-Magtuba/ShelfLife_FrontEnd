@@ -8,11 +8,14 @@ import 'package:permission_handler/permission_handler.dart';
 import '../constants/app_constants.dart';
 import '../widgets/shared_widgets.dart';
 import '../core/common/entities/entities.dart';
+
 import '../core/business/dtos/inventory_dto.dart';
 import '../core/business/dtos/product_dto.dart';
 import '../core/business/services/product_service.dart';
 import '../core/business/providers/inventory_provider.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
+import '../../core/common/interfaces/i_product_service.dart';
+
 
 class AddItemPage extends ConsumerStatefulWidget {
   const AddItemPage({super.key});
@@ -43,6 +46,8 @@ class _AddItemPageState extends ConsumerState<AddItemPage>
   final _priceCtrl = TextEditingController();
   final _notesCtrl = TextEditingController();
   bool _saving = false;
+  bool _isProductLocked = false;
+  bool _isFetchingProduct = false;
 
   @override
   void initState() {
@@ -268,36 +273,48 @@ class _AddItemPageState extends ConsumerState<AddItemPage>
                 controller: _tabController,
                 children: [
                   // Manual tab
-                  _ManualForm(
-                    barcodeCtrl: _barcodeCtrl,
-                    formKey: _formKey,
-                    nameCtrl: _nameCtrl,
-                    category: _category,
-                    onCategoryChanged: (c) {
-                      if (c != null) setState(() => _category = c);
-                    },
-                    quantity: _quantity,
-                    onQtyChanged: (v) => setState(() => _quantity = v),
-                    weightCtrl: _weightCtrl,
-                    weightUnit: _weightUnit,
-                    onWeightUnitChanged: (u) {
-                      if (u != null) setState(() => _weightUnit = u);
-                    },
-                    useExactDate: _useExactDate,
-                    onExpiryModeChanged: (v) =>
-                        setState(() => _useExactDate = v),
-                    expiryDate: _expiryDate,
-                    onPickExpiry: () => _pickDate(true),
-                    mfgDate: _mfgDate,
-                    onPickMfg: () => _pickDate(false),
-                    shelfLifeCtrl: _shelfLifeCtrl,
-                    consumeWithinCtrl: _consumeWithinCtrl,
-                    purchaseDate: _purchaseDate,
-                    onPickPurchase: _pickPurchaseDate,
-                    priceCtrl: _priceCtrl,
-                    notesCtrl: _notesCtrl,
-                    saving: _saving,
-                    onSave: _save,
+                  Stack(
+                    children: [
+                      _ManualForm(
+                        barcodeCtrl: _barcodeCtrl,
+                        formKey: _formKey,
+                        nameCtrl: _nameCtrl,
+                        category: _category,
+                        onCategoryChanged: (c) {
+                          if (c != null) setState(() => _category = c);
+                        },
+                        quantity: _quantity,
+                        onQtyChanged: (v) => setState(() => _quantity = v),
+                        weightCtrl: _weightCtrl,
+                        weightUnit: _weightUnit,
+                        onWeightUnitChanged: (u) {
+                          if (u != null) setState(() => _weightUnit = u);
+                        },
+                        useExactDate: _useExactDate,
+                        onExpiryModeChanged: (v) =>
+                            setState(() => _useExactDate = v),
+                        expiryDate: _expiryDate,
+                        onPickExpiry: () => _pickDate(true),
+                        mfgDate: _mfgDate,
+                        onPickMfg: () => _pickDate(false),
+                        shelfLifeCtrl: _shelfLifeCtrl,
+                        consumeWithinCtrl: _consumeWithinCtrl,
+                        purchaseDate: _purchaseDate,
+                        onPickPurchase: _pickPurchaseDate,
+                        priceCtrl: _priceCtrl,
+                        notesCtrl: _notesCtrl,
+                        saving: _saving,
+                        isProductLocked: _isProductLocked,
+                        onSave: _save,
+                      ),
+                      if (_isFetchingProduct)
+                        Container(
+                          color: Colors.white.withOpacity(0.7),
+                          child: const Center(
+                            child: CircularProgressIndicator(),
+                          ),
+                        ),
+                    ],
                   ),
                   // Scan tab
                   _ScanTab(
@@ -307,6 +324,7 @@ class _AddItemPageState extends ConsumerState<AddItemPage>
   setState(() {
     _barcodeCtrl.text = barcode;
     _nameCtrl.text = 'Looking up product...';
+                        _isFetchingProduct = true;
   });
 
   try {
@@ -321,20 +339,34 @@ class _AddItemPageState extends ConsumerState<AddItemPage>
           (c) => c.label == product.category,
           orElse: () => ItemCategory.fridge,
         );
+                            _weightCtrl.text = product.weightGrams?.toStringAsFixed(0) ?? '';
+                            _priceCtrl.text = product.price?.toStringAsFixed(2) ?? '';
+                            _isProductLocked = true;
+                            _isFetchingProduct = false;
       });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('${product.name} found — fill in expiry date')),
       );
     } else {
       // Not found — just put barcode in field, let user type name
-      setState(() => _nameCtrl.text = '');
+                          setState(() {
+                            _nameCtrl.text = '';
+                            _weightCtrl.text = '';
+                            _priceCtrl.text = '';
+                            _isProductLocked = false;
+                            _isFetchingProduct = false;
+                          });
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Product not found — please enter details manually')),
       );
     }
   } catch (e) {
     if (!mounted) return;
-    setState(() => _nameCtrl.text = '');
+                        setState(() {
+                          _nameCtrl.text = '';
+                          _isProductLocked = false;
+                          _isFetchingProduct = false;
+                        });
   }
 },
                   ),
@@ -398,6 +430,7 @@ class _ManualForm extends StatefulWidget {
     required this.priceCtrl,
     required this.notesCtrl,
     required this.saving,
+    required this.isProductLocked,
     required this.onSave,
   });
 
@@ -428,6 +461,7 @@ class _ManualFormState extends State<_ManualForm>
             nameCtrl:          widget.nameCtrl,
             barcodeCtrl:       widget.barcodeCtrl,
             selectedCategory:  widget.category.label,
+            isLocked:          widget.isProductLocked,
             onCategoryChanged: (v) {
               if (v == null) return;
               final cat = ItemCategory.values.firstWhere(
@@ -494,6 +528,7 @@ class _ManualFormState extends State<_ManualForm>
                 flex: 3,
                 child: TextFormField(
                   controller: widget.weightCtrl,
+                  readOnly: widget.isProductLocked,
                   keyboardType:
                       const TextInputType.numberWithOptions(decimal: true),
                   decoration: const InputDecoration(
@@ -506,7 +541,7 @@ class _ManualFormState extends State<_ManualForm>
               Expanded(
                 flex: 2,
                 child: DropdownButtonFormField<String>(
-                  initialValue: widget.weightUnit,
+                  value: widget.weightUnit,
                   decoration: const InputDecoration(labelText: 'Unit'),
                   items: AppStrings.weightUnits
                       .map((u) => DropdownMenuItem(
@@ -514,7 +549,7 @@ class _ManualFormState extends State<_ManualForm>
                           child: Text(u,
                               style: GoogleFonts.poppins(fontSize: 14))))
                       .toList(),
-                  onChanged: widget.onWeightUnitChanged,
+                  onChanged: widget.isProductLocked ? null : widget.onWeightUnitChanged,
                 ),
               ),
             ],
@@ -585,6 +620,7 @@ class _ManualFormState extends State<_ManualForm>
           const SizedBox(height: 12),
           TextFormField(
             controller: widget.priceCtrl,
+            readOnly: widget.isProductLocked,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
             decoration: const InputDecoration(
               labelText: 'Purchase Price (₱)',
@@ -597,6 +633,7 @@ class _ManualFormState extends State<_ManualForm>
           const _SectionLabel('Notes (Optional)'),
           TextFormField(
             controller: widget.notesCtrl,
+            readOnly: widget.isProductLocked,
             maxLines: 3,
             decoration: const InputDecoration(
               hintText: 'e.g. opened, stored in back shelf...',
@@ -669,40 +706,37 @@ class _ScanTabState extends State<_ScanTab>
     super.dispose();
   }
 
-  void _onDetect(
-      BarcodeCapture capture,
-      void Function(void Function()) setSheetState,
-      MobileScannerController controller,
-      ) {
-    if (_hasScanned) return;
+ void _onDetect(
+    BarcodeCapture capture,
+    void Function(void Function()) setSheetState,
+    MobileScannerController controller
+    
+    ) {
+  if (_hasScanned) return;
 
-    debugPrint('[Scanner] onDetect fired — ${capture.barcodes.length} barcode(s) found');
+  debugPrint('[Scanner] onDetect fired — ${capture.barcodes.length} barcode(s) found');
 
-    for (final barcode in capture.barcodes) {
-      debugPrint('[Scanner] rawValue: ${barcode.rawValue}');
-      debugPrint('[Scanner] format:   ${barcode.format}');
-      debugPrint('[Scanner] type:     ${barcode.type}');
+  for (final barcode in capture.barcodes) {
+    debugPrint('[Scanner] rawValue: ${barcode.rawValue}');
+    debugPrint('[Scanner] format:   ${barcode.format}');
+    debugPrint('[Scanner] type:     ${barcode.type}');
 
-      final raw = barcode.rawValue;
-      if (raw == null || raw.isEmpty) {
-        debugPrint('[Scanner] rawValue is null or empty — skipping');
-        continue;
-      }
-
-      setSheetState(() => _hasScanned = true);
-      setState(() => _hasScanned = true);
-
-      controller.stop();
-
-      Future.delayed(const Duration(milliseconds: 900), () {
-        if (mounted) {
-          Navigator.of(context, rootNavigator: true).pop();
-          widget.onBarcodeScanned(raw);
-        }
-      });
-      return;
+    final raw = barcode.rawValue;
+    if (raw == null || raw.isEmpty) {
+      debugPrint('[Scanner] rawValue is null or empty — skipping');
+      continue;
     }
+
+    setSheetState(() => _hasScanned = true);
+    setState(() => _hasScanned = true);
+
+    controller.stop();
+
+      widget.onBarcodeScanned(raw);
+
+    return;
   }
+}
 
   void _openScanner() async {
     final status = await Permission.camera.request();
@@ -741,8 +775,8 @@ class _ScanTabState extends State<_ScanTab>
       ),
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setSheetState) {
-          final boxWidth = 260.0;
-          final boxHeight = 160.0;
+          const boxWidth = 260.0;
+          const boxHeight = 160.0;
           return SizedBox(
             height: MediaQuery.of(ctx).size.height * 0.65,
             child: Stack(
@@ -1035,8 +1069,8 @@ class _CornerBracketsPainter extends CustomPainter {
     const r = 12.0;   // corner radius, should match the box's borderRadius
 
     // Top-left
-    canvas.drawLine(Offset(r, 0), Offset(len, 0), paint);
-    canvas.drawLine(Offset(0, r), Offset(0, len), paint);
+    canvas.drawLine(const Offset(r, 0), const Offset(len, 0), paint);
+    canvas.drawLine(const Offset(0, r), const Offset(0, len), paint);
 
     // Top-right
     canvas.drawLine(Offset(size.width - r, 0), Offset(size.width - len, 0), paint);
