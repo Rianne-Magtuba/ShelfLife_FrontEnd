@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
@@ -13,15 +14,15 @@ import '../core/business/services/product_service.dart';
 import '../core/business/providers/inventory_provider.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
-class AddItemPage extends StatefulWidget {
+class AddItemPage extends ConsumerStatefulWidget {
   const AddItemPage({super.key});
 
   @override
-  State<AddItemPage> createState() => _AddItemPageState();
+  ConsumerState<AddItemPage> createState() => _AddItemPageState();
 }
 
 
-class _AddItemPageState extends State<AddItemPage>
+class _AddItemPageState extends ConsumerState<AddItemPage>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   final _formKey = GlobalKey<FormState>();
@@ -98,20 +99,82 @@ class _AddItemPageState extends State<AddItemPage>
 
   void _save() async {
     if (!_formKey.currentState!.validate()) return;
-    if (_useExactDate && _expiryDate == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select an expiry date')),
-      );
-      return;
+
+    // ── Resolve expiry date ────────────────────────────────────────────────
+    DateTime? resolvedExpiry;
+
+    if (_useExactDate) {
+      if (_expiryDate == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Please select an expiry date')),
+        );
+        return;
+      }
+      resolvedExpiry = _expiryDate;
+    } else {
+      // "After Manufacturing" mode — need both mfg date and shelf life
+      if (_mfgDate == null || _shelfLifeCtrl.text.trim().isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Please enter manufacturing date and shelf life'),
+          ),
+        );
+        return;
+      }
+      final shelfDays = int.tryParse(_shelfLifeCtrl.text.trim());
+      if (shelfDays == null || shelfDays <= 0) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Shelf life must be a positive number')),
+        );
+        return;
+      }
+      resolvedExpiry = _mfgDate!.add(Duration(days: shelfDays));
     }
+
+    // ── Build request ──────────────────────────────────────────────────────
+    final hasBarcode = _barcodeCtrl.text.trim().isNotEmpty;
+
+    final request = AddInventoryItemRequest(
+      isCustomItem:      !hasBarcode,
+      barcodeRef:        hasBarcode ? _barcodeCtrl.text.trim() : null,
+      // Custom fields are only sent when there's no barcode reference
+      customName:        !hasBarcode ? _nameCtrl.text.trim() : null,
+      customCategory:    !hasBarcode ? _category.label : null,
+      customWeightGrams: !hasBarcode
+          ? double.tryParse(_weightCtrl.text.trim())
+          : null,
+      customPrice:       !hasBarcode
+          ? double.tryParse(_priceCtrl.text.trim())
+          : null,
+      quantity:        _quantity,
+      quality:         'Good',          // extend with a dropdown later if needed
+      notes:           _notesCtrl.text.trim(),
+      expirationDate:  resolvedExpiry!,
+    );
+
+    // ── Call backend via provider ──────────────────────────────────────────
     setState(() => _saving = true);
-    await Future.delayed(const Duration(milliseconds: 800));
+
+    final success = await ref
+        .read(inventoryProvider.notifier)
+        .addItem(request);
+
     if (!mounted) return;
     setState(() => _saving = false);
-    context.pop();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('${_nameCtrl.text} added to inventory!')),
-    );
+
+    if (success) {
+      context.pop();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('${_nameCtrl.text.trim()} added to inventory!')),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Failed to save item. Please try again.'),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+    }
   }
 
   @override

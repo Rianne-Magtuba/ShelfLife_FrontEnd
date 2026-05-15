@@ -35,7 +35,7 @@ class AddInventoryItemRequest {
     'Quantity':        quantity,
     'Quality':         quality,
     'Notes':           notes,
-    'ExpirationDate':  expirationDate.toIso8601String(),
+    'ExpirationDate': expirationDate.toUtc().toIso8601String().replaceAll(RegExp(r'\.\d{3}'), ''),
   };
 }
 
