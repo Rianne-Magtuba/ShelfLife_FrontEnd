@@ -2,14 +2,17 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
+import '../config/app_config.dart';
 
 
 class ApiClient {
-  static const String _baseUrl = 'https://shelflife-api-1030171236919.asia-east1.run.app';
+  static String get _baseUrl => AppConfig.apiBaseUrl;
 
   static const _storage = FlutterSecureStorage();
 
   // ── Token management ──────────────────────────────────────────────────────
+
+
 
   static Future<void> saveToken(String token) async {
     await _storage.write(key: 'auth_token', value: token);

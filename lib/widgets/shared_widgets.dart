@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../constants/app_constants.dart';
-import '../data/models/models.dart';
+import '../core/common/entities/entities.dart';
 
 // ─── Gradient Background ──────────────────────────────────────────────────────
 
@@ -618,6 +618,7 @@ class SettingsTile extends StatelessWidget {
 /// This avoids duplicating the field styling and dropdown items.
 class ProductBasicFields extends StatelessWidget {
   final TextEditingController nameCtrl;
+  final TextEditingController barcodeCtrl;
   final String selectedCategory;
   final ValueChanged<String?> onCategoryChanged;
   final String? nameLabelOverride;
@@ -625,6 +626,7 @@ class ProductBasicFields extends StatelessWidget {
   const ProductBasicFields({
     super.key,
     required this.nameCtrl,
+    required this.barcodeCtrl,
     required this.selectedCategory,
     required this.onCategoryChanged,
     this.nameLabelOverride,
@@ -645,6 +647,16 @@ class ProductBasicFields extends StatelessWidget {
           validator: (v) => (v == null || v.trim().isEmpty)
               ? 'Product name is required'
               : null,
+        ),
+        const SizedBox(height: 12),
+        TextFormField(
+          controller: barcodeCtrl,
+          readOnly: true, // scanner fills this, user doesn't type it
+          decoration: const InputDecoration(
+            labelText: 'Barcode (optional)',
+            prefixIcon: Icon(Icons.qr_code, size: 18),
+            hintText: 'Scan barcode to auto-fill',
+          ),
         ),
         const SizedBox(height: 12),
         DropdownButtonFormField<String>(

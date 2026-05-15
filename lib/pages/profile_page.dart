@@ -5,10 +5,11 @@ import 'package:google_fonts/google_fonts.dart';
 import '../constants/app_constants.dart';
 import '../widgets/shared_widgets.dart';
 import '../app/router.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 // ─── Providers ────────────────────────────────────────────────────────────────
 
-final darkModeProvider = StateProvider<bool>((ref) => false);
+
 final defaultCategoryProvider = StateProvider<String>((ref) => 'Fridge');
 final defaultAlertDaysProvider = StateProvider<int>((ref) => 3);
 
@@ -22,9 +23,33 @@ class ProfilePage extends ConsumerStatefulWidget {
 }
 
 class _ProfilePageState extends ConsumerState<ProfilePage> {
-  String _displayName = 'Pie Ratatouille';
-  String _email = 'p.rat@email.com';
-  String _username = 'arrr';
+  String _displayName = '';
+  String _email = '';
+  String _username = '';
+
+  // Add this
+  final _storage = const FlutterSecureStorage();
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserData();
+  }
+
+  // Add this method
+  Future<void> _loadUserData() async {
+    final username = await _storage.read(key: 'username') ?? '';
+    final email    = await _storage.read(key: 'email')    ?? '';
+
+    if (mounted) {
+      setState(() {
+        _username    = username;
+        _email       = email;
+        _displayName = username; // use username as display name since
+        // your Firestore has no displayName field
+      });
+    }
+  }
 
   String get _initials {
     final parts = _displayName.trim().split(' ');
@@ -37,7 +62,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = ref.watch(darkModeProvider);
+
     final defaultCategory = ref.watch(defaultCategoryProvider);
     final alertDays = ref.watch(defaultAlertDaysProvider);
 
@@ -146,22 +171,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                     // ── App Preferences ──
                     _buildSectionLabel('App Preferences'),
                     _buildCard([
-                      ListTile(
-                        leading: const Icon(Icons.brightness_6_outlined,
-                            color: AppColors.mediumBlue, size: 22),
-                        title: Text('Dark Mode',
-                            style: GoogleFonts.poppins(
-                                fontSize: 14, fontWeight: FontWeight.w500)),
-                        trailing: Switch(
-                          value: isDark,
-                          onChanged: (v) =>
-                              ref.read(darkModeProvider.notifier).state = v,
-                          activeThumbColor: AppColors.mediumBlue,
-                        ),
-                        contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 4, vertical: 2),
-                      ),
-                      const Divider(indent: 48, height: 1),
+
                       ListTile(
                         leading: const Icon(Icons.category_outlined,
                             color: AppColors.mediumBlue, size: 22),
@@ -215,7 +225,10 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                     SizedBox(
                       width: double.infinity,
                       child: OutlinedButton.icon(
-                        onPressed: () => _confirmLogout(context),
+                        onPressed: () async {
+                          await _storage.deleteAll();
+                          if (mounted) context.go(AppRoutes.login);
+                        },
                         icon: const Icon(Icons.logout, size: 18),
                         label: Text('Log Out',
                             style: GoogleFonts.poppins(
@@ -266,10 +279,24 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
             onTap: () => _showAvatarOptions(context),
             child: Stack(
               children: [
-                ProfileAvatar(
-                  initials: _initials,
-                  size: 64,
-                  avatarPath: 'assets/images/placeholderPP.png',
+                Container(
+                  width: 64,
+                  height: 64,
+                  decoration: BoxDecoration(
+                    color: AppColors.mediumBlue.withOpacity(0.15),
+                    shape: BoxShape.circle,
+                    border: Border.all(color: AppColors.mediumBlue.withOpacity(0.3), width: 2),
+                  ),
+                  child: Center(
+                    child: Text(
+                      _initials,
+                      style: GoogleFonts.poppins(
+                        fontSize: 24,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.mediumBlue,
+                      ),
+                    ),
+                  ),
                 ),
                 Positioned(
                   right: 0,

@@ -4,8 +4,8 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../constants/app_constants.dart';
-import '../data/models/auth_models.dart';
-import '../data/services/auth_service.dart';
+import '../core/business/dtos/user_dto.dart';
+import '../core/business/services/auth_service.dart';
 import '../widgets/shared_widgets.dart';
 import '../app/router.dart';
 

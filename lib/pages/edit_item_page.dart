@@ -1,22 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import '../constants/app_constants.dart';
 import '../widgets/shared_widgets.dart';
-import '../data/models/models.dart';
-import '../data/mock_data.dart';
+import '../core/common/entities/entities.dart';
+import '../core/business/dtos/inventory_dto.dart';
+import '../core/business/providers/inventory_provider.dart';
 
-class EditItemPage extends StatefulWidget {
+class EditItemPage extends ConsumerStatefulWidget {
   final String itemId;
   const EditItemPage({super.key, required this.itemId});
 
   @override
-  State<EditItemPage> createState() => _EditItemPageState();
+  ConsumerState<EditItemPage> createState() => _EditItemPageState();
 }
 
-class _EditItemPageState extends State<EditItemPage> {
+class _EditItemPageState extends ConsumerState<EditItemPage> {
   late FoodItem _item;
   final _formKey = GlobalKey<FormState>();
 
@@ -36,9 +38,10 @@ class _EditItemPageState extends State<EditItemPage> {
   @override
   void initState() {
     super.initState();
-    _item = MockData.items.firstWhere(
-      (i) => i.id == widget.itemId,
-      orElse: () => MockData.items.first,
+    final inventory = ref.read(inventoryProvider).value ?? [];
+    _item = inventory.firstWhere(
+          (i) => i.id == widget.itemId,
+      orElse: () => inventory.first, // fallback prevents null
     );
 
     _nameCtrl = TextEditingController(text: _item.name);

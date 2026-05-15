@@ -1,22 +1,26 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import '../constants/app_constants.dart';
 import '../app/router.dart';
 import '../widgets/shared_widgets.dart';
-import '../data/models/models.dart';
-import '../data/mock_data.dart';
+import '../core/common/entities/entities.dart';
+import '../core/business/providers/inventory_provider.dart';
 
-class ItemDetailPage extends StatelessWidget {
+class ItemDetailPage extends ConsumerWidget {
   final String itemId;
   const ItemDetailPage({super.key, required this.itemId});
 
   @override
-  Widget build(BuildContext context) {
-    final item = MockData.items
-        .firstWhere((i) => i.id == itemId, orElse: () => MockData.items.first);
+  Widget build(BuildContext context, WidgetRef ref) {
+    final item = ref.watch(inventoryProvider).value?.firstWhere(
+          (i) => i.id == itemId,
+      orElse: () => throw Exception('Item not found'),
+    );
+    if (item == null) return const Center(child: CircularProgressIndicator());
 
     return Scaffold(
       body: AppBackground(

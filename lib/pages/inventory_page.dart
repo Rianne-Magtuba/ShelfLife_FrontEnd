@@ -1,21 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../constants/app_constants.dart';
 import '../widgets/shared_widgets.dart';
-import '../data/models/models.dart';
-import '../data/mock_data.dart';
+import '../core/common/entities/entities.dart';
+import '../core/business/providers/inventory_provider.dart';
 import '../app/router.dart';
 
-class InventoryPage extends StatefulWidget {
+class InventoryPage extends ConsumerStatefulWidget {
   const InventoryPage({super.key});
 
   @override
-  State<InventoryPage> createState() => _InventoryPageState();
+  ConsumerState<InventoryPage> createState() => _InventoryPageState();
 }
 
-class _InventoryPageState extends State<InventoryPage> {
+class _InventoryPageState extends ConsumerState<InventoryPage> {
   final _searchCtrl = TextEditingController();
   String _selectedCategory = 'All';
   String _selectedSort = 'Expiry (Soonest)';
@@ -25,8 +26,12 @@ class _InventoryPageState extends State<InventoryPage> {
   @override
   void initState() {
     super.initState();
-    _allItems = List.from(MockData.items);
     _searchCtrl.addListener(() => setState(() {}));
+    // Load items after first frame so ref is available
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final items = ref.read(inventoryProvider).value ?? [];
+      setState(() => _allItems = items);
+    });
   }
 
   @override
@@ -67,7 +72,7 @@ class _InventoryPageState extends State<InventoryPage> {
   void _deleteItem(FoodItem item) async {
     final confirmed = await showDeleteConfirmation(context, item.name);
     if (confirmed == true) {
-      setState(() => _allItems.removeWhere((i) => i.id == item.id));
+      await ref.read(inventoryProvider.notifier).discardItem(item.id);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('${item.name} deleted')),
@@ -93,6 +98,10 @@ class _InventoryPageState extends State<InventoryPage> {
 
   @override
   Widget build(BuildContext context) {
+    ref.listen(inventoryProvider, (_, next) {
+      next.whenData((items) => setState(() => _allItems = items));
+    });
+
     final filtered = _filtered;
     final expired =
         filtered.where((i) => i.status == ItemStatus.expired).toList();
