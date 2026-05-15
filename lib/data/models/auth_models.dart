@@ -1,4 +1,5 @@
 
+import 'dart:convert';
 
 // ── Login ─────────────────────────────────────────────────────────────────────
 
@@ -32,14 +33,33 @@ class LoginResponse {
   ///   token = ...,      ← becomes json['token']
   ///   userId = ...,     ← becomes json['userId']
   /// })
-  factory LoginResponse.fromJson(Map<String, dynamic> json) {
-    return LoginResponse(
-      token:    _str(json, ['token',    'Token']),
-      userId:   _str(json, ['sub',      'userId',   'UserId',   'id', 'Id']), // ← add 'sub' first
-      username: _str(json, ['username', 'Username']),
-      email:    _str(json, ['email',    'Email']),
-    );
-  }
+factory LoginResponse.fromJson(Map<String, dynamic> json) {
+// Decode the JWT payload to extract sub
+String extractSub(String token) {
+try {
+final parts = token.split('.');
+if (parts.length != 3) return '';
+// Base64 decode the payload (part 2)
+String payload = parts[1];
+// Pad base64 string if needed
+while (payload.length % 4 != 0) payload += '=';
+final decoded = utf8.decode(base64Url.decode(payload));
+final map = jsonDecode(decoded) as Map<String, dynamic>;
+return map['sub'] as String? ?? '';
+} catch (_) {
+return '';
+}
+}
+
+final token = _str(json, ['token', 'Token']);
+
+return LoginResponse(
+  token:    token,
+  userId:   extractSub(token), // ← decode sub from JWT itself
+  username: _str(json, ['username', 'Username']),
+  email:    _str(json, ['email', 'Email']),
+);
+}
 
   /// Tries multiple key casings so minor C# serializer differences don't break things.
   static String _str(Map<String, dynamic> json, List<String> keys) {
