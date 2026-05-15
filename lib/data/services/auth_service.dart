@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../models/auth_models.dart';
 import 'api_client.dart';
@@ -106,8 +107,12 @@ class AuthService implements IAuthService {
       requiresAuth: false,
     );
 
+    // ADD THESE — tells you exactly what the backend said
+    debugPrint('[Register] Status: ${response.statusCode}');
+    debugPrint('[Register] Body: ${response.body}');
+
     if (response.statusCode == 200 || response.statusCode == 201) {
-      return; // success
+      return;
     } else if (response.statusCode == 409) {
       throw Exception(ApiClient.parseError(
           response, 'An account with this email already exists.'));

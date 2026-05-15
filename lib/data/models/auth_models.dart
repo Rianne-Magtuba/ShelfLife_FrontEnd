@@ -35,7 +35,7 @@ class LoginResponse {
   factory LoginResponse.fromJson(Map<String, dynamic> json) {
     return LoginResponse(
       token:    _str(json, ['token',    'Token']),
-      userId:   _str(json, ['userId',   'UserId',   'id', 'Id']),
+      userId:   _str(json, ['sub',      'userId',   'UserId',   'id', 'Id']), // ← add 'sub' first
       username: _str(json, ['username', 'Username']),
       email:    _str(json, ['email',    'Email']),
     );

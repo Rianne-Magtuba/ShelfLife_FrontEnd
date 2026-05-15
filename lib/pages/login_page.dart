@@ -35,7 +35,7 @@ class _LoginPageState extends State<LoginPage> {
     });
 
     try {
-      final authService = MockAuthService();
+      final authService = AuthService();
       await authService.login(
         LoginRequest(
           email: _emailCtrl.text.trim(),
@@ -60,6 +60,125 @@ class _LoginPageState extends State<LoginPage> {
     _emailCtrl.dispose();
     _passCtrl.dispose();
     super.dispose();
+  }
+
+  void _showForgotPasswordDialog() {
+    showDialog(
+      context: context,
+      barrierColor: Colors.black.withOpacity(0.6), // darkens background
+      barrierDismissible: true, // disappears when outside is clicked
+      builder: (ctx) => Dialog(
+        backgroundColor: const Color(0xFFECF3FF),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Icon
+              Container(
+                width: 56,
+                height: 56,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF4E7BB6).withOpacity(0.12),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.mail_outline_rounded,
+                  color: Color(0xFF4E7BB6),
+                  size: 28,
+                ),
+              ),
+              const SizedBox(height: 16),
+              // Title
+              Text(
+                'Are you sure?',
+                style: GoogleFonts.poppins(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  color: const Color(0xFF4E7BB6),
+                ),
+              ),
+              const SizedBox(height: 10),
+              // Description
+              Text(
+                'By clicking confirm, we will send you a verification email to change your password.',
+                textAlign: TextAlign.center,
+                style: GoogleFonts.poppins(
+                  fontSize: 13,
+                  color: const Color(0xFF4E7BB6).withOpacity(0.8),
+                  height: 1.5,
+                ),
+              ),
+              const SizedBox(height: 24),
+              // Buttons
+              Row(
+                children: [
+                  // Cancel
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.of(ctx).pop(),
+                      style: OutlinedButton.styleFrom(
+                        side: const BorderSide(color: Color(0xFF4E7BB6)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                      child: Text(
+                        'Cancel',
+                        style: GoogleFonts.poppins(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: const Color(0xFF4E7BB6),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  // Confirm
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Navigator.of(ctx).pop();
+                        // TODO: call your forgot password API here
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              'Password reset email sent!',
+                              style: GoogleFonts.poppins(fontSize: 13),
+                            ),
+                            backgroundColor: const Color(0xFF4E7BB6),
+                          ),
+                        );
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF4E7BB6),
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                      child: Text(
+                        'Confirm',
+                        style: GoogleFonts.poppins(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   @override
@@ -163,14 +282,14 @@ class _LoginPageState extends State<LoginPage> {
                       Align(
                         alignment: Alignment.centerRight,
                         child: TextButton(
-                          onPressed: () {},
+                          onPressed: _showForgotPasswordDialog,
                           child: Text('Forgot password?',
                               style: GoogleFonts.poppins(
                                   fontSize: 13, color: AppColors.mediumBlue)),
                         ),
                       ),
                       const SizedBox(height: 24),
-                      // Add this just above PrimaryButton(...)
+
                       if (_errorMessage != null) ...[
                         Container(
                           padding: const EdgeInsets.all(12),
@@ -233,3 +352,5 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 }
+
+

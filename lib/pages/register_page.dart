@@ -88,7 +88,7 @@ class _RegisterPageState extends State<RegisterPage> {
     });
 
     try {
-      final authService = MockAuthService();
+      final authService = AuthService();
       await authService.register(
         RegisterRequest(
           username: _usernameCtrl.text.trim(),
