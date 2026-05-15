@@ -11,7 +11,6 @@ import '../pages/notification_settings_page.dart';
 import '../pages/profile_page.dart';
 import '../pages/statistics_page.dart';
 import '../pages/help_page.dart';
-import '../pages/scan_page.dart';
 import '../widgets/main_scaffold.dart'; // ← import scaffold, NOT main.dart
 import '../pages/edit_item_page.dart';
 
@@ -28,7 +27,6 @@ class AppRoutes {
   static const profile = '/profile';
   static const statistics = '/statistics';
   static const help = '/help';
-  static const scan = '/scan';
   static const editItem = '/edit-item';
 }
 
@@ -98,9 +96,6 @@ final GoRouter appRouter = GoRouter(
       path: AppRoutes.help,
       builder: (_, __) => const HelpPage(),
     ),
-    GoRoute(
-      path: AppRoutes.scan,
-      builder: (_, __) => const ScanPage(),
-    ),
+
   ],
 );

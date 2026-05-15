@@ -3,9 +3,11 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
+import 'package:permission_handler/permission_handler.dart';
 import '../constants/app_constants.dart';
 import '../widgets/shared_widgets.dart';
-import '../data/models.dart';
+import '../data/models/models.dart';
+import 'package:mobile_scanner/mobile_scanner.dart';
 
 class AddItemPage extends StatefulWidget {
   const AddItemPage({super.key});
@@ -229,17 +231,26 @@ class _AddItemPageState extends State<AddItemPage>
                   // Scan tab
                   _ScanTab(
                     onManualEntry: () => _tabController.animateTo(0),
-                    onDateScanned: (date) {
-                      setState(() {
-                        _expiryDate = date;
-                        _useExactDate = true;
+                    onBarcodeScanned: (barcode) {
+                      // Close the camera sheet after 800ms (lets user see the success overlay)
+                      Future.delayed(const Duration(milliseconds: 800), () {
+                        if (mounted) Navigator.of(context).pop();
                       });
+
+                      // TODO: later, call your ProductDataService to look up this barcode
+                      // and auto-fill _nameCtrl.text with the product name from Firestore
+                      // For now, just put the barcode in the name field so the user can see it worked
+                      setState(() {
+                        _nameCtrl.text = 'Barcode: $barcode';
+                      });
+
+                      // Switch to the manual form so user can fill in expiry date + other fields
                       _tabController.animateTo(0);
+
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                          content: Text(
-                            'Date scanned: ${DateFormat('MMMM d, yyyy').format(date)}',
-                          ),
+                          content: Text('Barcode scanned: $barcode — please fill in the expiry date'),
+                          duration: const Duration(seconds: 3),
                         ),
                       );
                     },
@@ -322,67 +333,21 @@ class _ManualFormState extends State<_ManualForm>
       child: ListView(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 40),
         children: [
-          // ── Photo uploader ────────────────────────────────────────────────
-          const _SectionLabel('Product Photo'),
-          GestureDetector(
-            onTap: () {},
-            child: Container(
-              height: 100,
-              decoration: BoxDecoration(
-                color: AppColors.lightBlue.withOpacity(0.3),
-                borderRadius: BorderRadius.circular(AppSizes.radiusL),
-                border: Border.all(color: AppColors.lightBlue),
-              ),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.add_photo_alternate_outlined,
-                      color: AppColors.mediumBlue, size: 32),
-                  const SizedBox(height: 6),
-                  Text(
-                    'Tap to add photo',
-                    style: GoogleFonts.poppins(
-                        fontSize: 13, color: AppColors.mediumBlue),
-                  ),
-                ],
-              ),
-            ).animate().fadeIn(),
-          ),
-          const SizedBox(height: 20),
 
           // ── Basic Information ─────────────────────────────────────────────
           const _SectionLabel('Basic Information'),
-          TextFormField(
-            controller: widget.nameCtrl,
-            decoration: const InputDecoration(
-              labelText: 'Product Name',
-              hintText: 'e.g. Milk, Bread, Yogurt',
-              prefixIcon: Icon(Icons.label_outline, size: 18),
-            ),
-            validator: (v) => (v == null || v.trim().isEmpty)
-                ? 'Product name is required'
-                : null,
+          ProductBasicFields(
+            nameCtrl:          widget.nameCtrl,
+            selectedCategory:  widget.category.label,
+            onCategoryChanged: (v) {
+              if (v == null) return;
+              final cat = ItemCategory.values.firstWhere(
+                    (c) => c.label == v,
+                orElse: () => ItemCategory.fridge,
+              );
+              widget.onCategoryChanged(cat);
+            },
           ),
-          const SizedBox(height: 12),
-
-          // Category dropdown — must use value: not initialValue:
-          DropdownButtonFormField<ItemCategory>(
-            initialValue: widget.category,
-            decoration: const InputDecoration(labelText: 'Category'),
-            items: ItemCategory.values
-                .map((c) => DropdownMenuItem(
-                      value: c,
-                      child: Row(children: [
-                        Icon(c.icon, size: 18, color: c.color),
-                        const SizedBox(width: 8),
-                        Text(c.label, style: GoogleFonts.poppins(fontSize: 14)),
-                      ]),
-                    ))
-                .toList(),
-            onChanged: widget.onCategoryChanged,
-          ),
-          const SizedBox(height: 12),
-
           // Quantity stepper
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -567,20 +532,323 @@ class _ManualFormState extends State<_ManualForm>
 
 class _ScanTab extends StatefulWidget {
   final VoidCallback onManualEntry;
-  final ValueChanged<DateTime> onDateScanned;
+  final ValueChanged<String> onBarcodeScanned;
 
   const _ScanTab({
     required this.onManualEntry,
-    required this.onDateScanned,
+    required this.onBarcodeScanned,
   });
 
   @override
   State<_ScanTab> createState() => _ScanTabState();
 }
 
-class _ScanTabState extends State<_ScanTab> with AutomaticKeepAliveClientMixin {
+class _ScanTabState extends State<_ScanTab>
+    with AutomaticKeepAliveClientMixin, SingleTickerProviderStateMixin {
+
+  late final MobileScannerController _controller;
+  late final AnimationController _scanLineController = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 1500),
+  )..repeat(reverse: true);
+  late final Animation<double> _scanLineAnimation = Tween<double>(
+    begin: 0.0,
+    end: 1.0,
+  ).animate(
+    CurvedAnimation(
+      parent: _scanLineController,
+      curve: Curves.easeInOut,
+    ),
+  );
+
+  bool _hasScanned = false;
+
   @override
   bool get wantKeepAlive => true;
+
+  @override
+  void initState() {
+    super.initState();
+      detectionSpeed: DetectionSpeed.normal;
+      returnImage: false;
+  }
+
+  @override
+  void dispose() {
+    _scanLineController.dispose();
+    super.dispose();
+  }
+
+  void _onDetect(
+      BarcodeCapture capture,
+      void Function(void Function()) setSheetState,
+      MobileScannerController controller,
+      ) {
+    if (_hasScanned) return;
+
+    debugPrint('[Scanner] onDetect fired — ${capture.barcodes.length} barcode(s) found');
+
+    for (final barcode in capture.barcodes) {
+      debugPrint('[Scanner] rawValue: ${barcode.rawValue}');
+      debugPrint('[Scanner] format:   ${barcode.format}');
+      debugPrint('[Scanner] type:     ${barcode.type}');
+
+      final raw = barcode.rawValue;
+      if (raw == null || raw.isEmpty) {
+        debugPrint('[Scanner] rawValue is null or empty — skipping');
+        continue;
+      }
+
+      setSheetState(() => _hasScanned = true);
+      setState(() => _hasScanned = true);
+
+      controller.stop();
+
+      Future.delayed(const Duration(milliseconds: 900), () {
+        if (mounted) {
+          Navigator.of(context, rootNavigator: true).pop();
+          widget.onBarcodeScanned(raw);
+        }
+      });
+      return;
+    }
+  }
+
+  void _openScanner() async {
+    final status = await Permission.camera.request();
+    if (status.isDenied || status.isPermanentlyDenied) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Camera permission is required to scan'),
+            action: status.isPermanentlyDenied
+                ? SnackBarAction(
+              label: 'Settings',
+              onPressed: () => openAppSettings(),
+            )
+                : null,
+          ),
+        );
+      }
+      return;
+    }
+
+    if (!mounted) return;
+    setState(() => _hasScanned = false);
+
+    // Create a fresh controller every time the sheet opens
+    final controller = MobileScannerController(
+      detectionSpeed: DetectionSpeed.normal,
+      returnImage: false,
+    );
+
+    await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.black,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setSheetState) {
+          final boxWidth = 260.0;
+          final boxHeight = 160.0;
+          return SizedBox(
+            height: MediaQuery.of(ctx).size.height * 0.65,
+            child: Stack(
+              children: [
+                MobileScanner(
+                  controller: controller,
+                  onDetect: (capture) => _onDetect(capture, setSheetState, controller),
+                  errorBuilder: (context, error) {
+                    debugPrint('[Scanner] ERROR: $error');
+                    return Center(
+                      child: Text('Camera error: $error',
+                          style: const TextStyle(color: Colors.red)),
+                    );
+                  },
+                ),
+                // ── Dark vignette outside the scan box ───────────────────
+                ColorFiltered(
+                  colorFilter: ColorFilter.mode(
+                    Colors.black.withOpacity(0.55),
+                    BlendMode.srcOut,
+                  ),
+                  child: Stack(
+                    children: [
+                      Container(
+                        decoration: const BoxDecoration(
+                          color: Colors.black,
+                          backgroundBlendMode: BlendMode.dstOut,
+                        ),
+                      ),
+                      Center(
+                        child: Container(
+                          width: boxWidth,
+                          height: boxHeight,
+                          decoration: BoxDecoration(
+                            color: Colors.black,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                // ── Scan box border ───────────────────────────────────────
+                Center(
+                  child: Container(
+                    width: boxWidth,
+                    height: boxHeight,
+                    decoration: BoxDecoration(
+                      border: Border.all(
+                        color: _hasScanned ? Colors.green : Colors.white,
+                        width: 2,
+                      ),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+
+                // ── Animated scan line ────────────────────────────────────
+                if (!_hasScanned)
+                  Center(
+                    child: SizedBox(
+                      width: boxWidth - 8,
+                      height: boxHeight,
+                      child: AnimatedBuilder(
+                        animation: _scanLineAnimation,
+                        builder: (_, __) {
+                          return Stack(
+                            clipBehavior: Clip.hardEdge,
+                            children: [
+                              Positioned(
+                                top: _scanLineAnimation.value * (boxHeight - 4),
+                                left: 0,
+                                right: 0,
+                                child: Container(
+                                  height: 2,
+                                  decoration: BoxDecoration(
+                                    gradient: LinearGradient(
+                                      colors: [
+                                        Colors.transparent,
+                                        AppColors.mediumBlue.withOpacity(0.9),
+                                        Colors.transparent,
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+
+                // ── Corner brackets ───────────────────────────────────────
+                Center(
+                  child: SizedBox(
+                    width: boxWidth,
+                    height: boxHeight,
+                    child: const _CornerBrackets(),
+                  ),
+                ),
+
+                // ── Instruction label ─────────────────────────────────────
+                Positioned(
+                  bottom: 140,
+                  left: 0,
+                  right: 0,
+                  child: Center(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: Colors.black54,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        'Point camera at the product barcode',
+                        style: GoogleFonts.poppins(
+                            color: Colors.white, fontSize: 13),
+                      ),
+                    ),
+                  ),
+                ),
+
+                // ── Top bar: close + flashlight ───────────────────────────
+                Positioned(
+                  top: 16,
+                  left: 16,
+                  right: 16,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      IconButton(
+                        onPressed: () {
+                          controller.stop();
+                          Navigator.of(ctx).pop();
+                        },
+                        icon: const Icon(Icons.close,
+                            color: Colors.white, size: 28),
+                      ),
+                      IconButton(
+                        onPressed: () => controller.toggleTorch(),
+                        icon: const Icon(Icons.flash_on,
+                            color: Colors.white, size: 28),
+                      ),
+                    ],
+                  ),
+                ),
+
+                // ── Success overlay ───────────────────────────────────────
+                AnimatedOpacity(
+                  opacity: _hasScanned ? 1.0 : 0.0,
+                  duration: const Duration(milliseconds: 300),
+                  child: IgnorePointer(
+                    child: Container(
+                      color: Colors.black54,
+                      child: Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.check_circle,
+                                color: Colors.green, size: 72),
+                            const SizedBox(height: 12),
+                            Text(
+                              'Barcode scanned!',
+                              style: GoogleFonts.poppins(
+                                color: Colors.white,
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Filling in product details...',
+                              style: GoogleFonts.poppins(
+                                  color: Colors.white70, fontSize: 13),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    ).whenComplete(() {
+      debugPrint('[Scanner] Sheet closed — disposing controller');
+      controller.stop();
+      controller.dispose();
+      if (mounted) setState(() => _hasScanned = false);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -598,42 +866,36 @@ class _ScanTabState extends State<_ScanTab> with AutomaticKeepAliveClientMixin {
                 color: AppColors.lightBlue.withOpacity(0.4),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(
-                Icons.camera_alt_outlined,
-                size: 48,
-                color: AppColors.mediumBlue,
-              ),
+              child: const Icon(Icons.qr_code_scanner,
+                  size: 48, color: AppColors.mediumBlue),
             ),
             const SizedBox(height: 24),
-            Text(
-              'Scan Feature',
-              style: GoogleFonts.poppins(
-                  fontSize: 18, fontWeight: FontWeight.w700),
-            ),
+            Text('Scan Product Barcode',
+                style: GoogleFonts.poppins(
+                    fontSize: 18, fontWeight: FontWeight.w700)),
             const SizedBox(height: 8),
             Text(
-              'Use your camera to scan expiration dates from packaging',
+              'Scan the barcode on the packaging to auto-fill the product name.',
               textAlign: TextAlign.center,
               style: GoogleFonts.poppins(
-                  fontSize: 13, color: AppColors.textSecondary, height: 1.5),
+                  fontSize: 13,
+                  color: AppColors.textSecondary,
+                  height: 1.5),
             ),
             const SizedBox(height: 32),
             SizedBox(
               width: 220,
               child: ElevatedButton.icon(
-                onPressed: () {
-                  // TODO: integrate real camera scan via ScanPage
-                  // For now simulate a scanned date
-                  widget.onDateScanned(
-                      DateTime.now().add(const Duration(days: 30)));
-                },
+                onPressed: _openScanner,
                 icon: const Icon(Icons.camera_alt, size: 18),
                 label: Text('Open Camera',
-                    style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+                    style:
+                    GoogleFonts.poppins(fontWeight: FontWeight.w600)),
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(AppSizes.radiusXL)),
+                      borderRadius:
+                      BorderRadius.circular(AppSizes.radiusXL)),
                 ),
               ),
             ),
@@ -656,6 +918,51 @@ class _ScanTabState extends State<_ScanTab> with AutomaticKeepAliveClientMixin {
       ),
     );
   }
+}
+
+// ─── Corner Brackets ──────────────────────────────────────────────────────────
+// Draws the four L-shaped corners over the scan box for a more polished look.
+
+class _CornerBrackets extends StatelessWidget {
+  const _CornerBrackets();
+
+  @override
+  Widget build(BuildContext context) {
+    return CustomPaint(painter: _CornerBracketsPainter());
+  }
+}
+
+class _CornerBracketsPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = AppColors.mediumBlue
+      ..strokeWidth = 3.5
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round;
+
+    const len = 20.0; // bracket arm length
+    const r = 12.0;   // corner radius, should match the box's borderRadius
+
+    // Top-left
+    canvas.drawLine(Offset(r, 0), Offset(len, 0), paint);
+    canvas.drawLine(Offset(0, r), Offset(0, len), paint);
+
+    // Top-right
+    canvas.drawLine(Offset(size.width - r, 0), Offset(size.width - len, 0), paint);
+    canvas.drawLine(Offset(size.width, r), Offset(size.width, len), paint);
+
+    // Bottom-left
+    canvas.drawLine(Offset(0, size.height - r), Offset(0, size.height - len), paint);
+    canvas.drawLine(Offset(r, size.height), Offset(len, size.height), paint);
+
+    // Bottom-right
+    canvas.drawLine(Offset(size.width, size.height - r), Offset(size.width, size.height - len), paint);
+    canvas.drawLine(Offset(size.width - r, size.height), Offset(size.width - len, size.height), paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────

@@ -4,6 +4,8 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../constants/app_constants.dart';
+import '../data/models/auth_models.dart';
+import '../data/services/auth_service.dart';
 import '../widgets/shared_widgets.dart';
 import '../../app/router.dart';
 
@@ -21,13 +23,36 @@ class _LoginPageState extends State<LoginPage> {
   bool _obscure = true;
   bool _loading = false;
 
+  // login_page.dart - only _login() changes, everything else stays identical
+
+  String? _errorMessage;
+
   void _login() async {
     if (!_formKey.currentState!.validate()) return;
-    setState(() => _loading = true);
-    await Future.delayed(const Duration(seconds: 1));
-    if (!mounted) return;
-    setState(() => _loading = false);
-    context.go(AppRoutes.home);
+    setState(() {
+      _loading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      final authService = MockAuthService();
+      await authService.login(
+        LoginRequest(
+          email: _emailCtrl.text.trim(),
+          password: _passCtrl.text,
+        ),
+      );
+      if (!mounted) return;
+      context.go(AppRoutes.home);
+
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _errorMessage = e.toString().replaceFirst('Exception: ', '');
+      });
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
   }
 
   @override
@@ -145,6 +170,34 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                       ),
                       const SizedBox(height: 24),
+                      // Add this just above PrimaryButton(...)
+                      if (_errorMessage != null) ...[
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: AppColors.expired.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(AppSizes.radiusS),
+                            border: Border.all(color: AppColors.expired.withOpacity(0.4)),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.error_outline, color: AppColors.expired, size: 18),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  _errorMessage!,
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 13,
+                                    color: AppColors.expired,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                      ],
+
                       PrimaryButton(
                         label: 'Log In',
                         onPressed: _login,

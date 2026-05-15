@@ -6,7 +6,7 @@ import 'package:intl/intl.dart';
 import '../constants/app_constants.dart';
 import '../app/router.dart';
 import '../widgets/shared_widgets.dart';
-import '../data/models.dart';
+import '../data/models/models.dart';
 import '../data/mock_data.dart';
 
 class ItemDetailPage extends StatelessWidget {

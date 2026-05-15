@@ -5,7 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import '../constants/app_constants.dart';
 import '../widgets/shared_widgets.dart';
-import '../data/models.dart';
+import '../data/models/models.dart';
 import '../data/mock_data.dart';
 
 class EditItemPage extends StatefulWidget {
