@@ -14,7 +14,7 @@ class InventoryService implements IInventoryService {
   @override
   Future<List<FoodItem>> getInventory() async {
     try {
-      final response = await ApiClient.get('/api/inventory');
+      final response = await ApiClient.get('/api/inventory/pantry');
 
       if (response.statusCode == 200) {
         final jsonList = jsonDecode(response.body) as List<dynamic>;

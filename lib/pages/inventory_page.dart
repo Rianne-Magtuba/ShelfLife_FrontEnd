@@ -70,16 +70,30 @@ class _InventoryPageState extends ConsumerState<InventoryPage> {
   }
 
   void _deleteItem(FoodItem item) async {
-    final confirmed = await showDeleteConfirmation(context, item.name);
-    if (confirmed == true) {
-      await ref.read(inventoryProvider.notifier).discardItem(item.id);
-      if (mounted) {
+  final confirmed = await showDeleteConfirmation(context, item.name);
+  if (confirmed == true) {
+    
+    // 1. Capture the boolean result
+    final success = await ref.read(inventoryProvider.notifier).discardItem(item.id);
+    
+    if (mounted) {
+      if (success) {
+        // 2. Only show this if the backend actually deleted it
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('${item.name} deleted')),
+        );
+      } else {
+        // 3. Show an error if it failed
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to delete ${item.name}'),
+            backgroundColor: Colors.redAccent,
+          ),
         );
       }
     }
   }
+}
 
   void _showSortSheet() {
     showModalBottomSheet(

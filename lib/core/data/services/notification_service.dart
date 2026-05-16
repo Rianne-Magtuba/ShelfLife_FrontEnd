@@ -47,18 +47,23 @@ class LocalNotificationService {
   // ── Request permission ────────────────────────────────────────────────────
   // THIS was the broken part — generics must be inline, not on a new line
 
-  static Future<bool> requestPermission() async {
+ static Future<bool> requestPermission() async {
     bool granted = false;
 
-    // Android 13+
+    // Android
     final android = _plugin.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
 
     if (android != null) {
+      // 1. Request standard notification permission (Android 13+)
       final result = await android.requestNotificationsPermission();
       granted = result ?? false;
+
+      // 2. Request exact alarm permission (Android 12/14+)
+      // THIS IS CRITICAL TO PREVENT THE CRASH
+      await android.requestExactAlarmsPermission();
     }
 
-// iOS
+    // iOS
     final ios = _plugin.resolvePlatformSpecificImplementation<IOSFlutterLocalNotificationsPlugin>();
 
     if (ios != null) {
@@ -73,7 +78,6 @@ class LocalNotificationService {
     debugPrint('[Notifications] Permission granted: $granted');
     return granted;
   }
-
   // ── Schedule for one item ─────────────────────────────────────────────────
 
   static Future<void> scheduleExpiryNotification(
