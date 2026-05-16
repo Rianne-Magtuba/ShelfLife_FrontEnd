@@ -9,18 +9,17 @@ import '../app/router.dart';
 import '../widgets/shared_widgets.dart';
 import '../core/common/entities/entities.dart';
 import '../core/business/providers/inventory_provider.dart';
-
+import 'package:collection/collection.dart';
 class ItemDetailPage extends ConsumerWidget {
   final String itemId;
   const ItemDetailPage({super.key, required this.itemId});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final item = ref.watch(inventoryProvider).value?.firstWhere(
-          (i) => i.id == itemId,
-      orElse: () => throw Exception('Item not found'),
-    );
-    if (item == null) return const Center(child: CircularProgressIndicator());
+ final inventoryItems = ref.watch(inventoryProvider).value;
+final item = inventoryItems?.firstWhereOrNull((i) => i.id == itemId);
+
+if (item == null) return const Center(child: CircularProgressIndicator());
 
     return Scaffold(
       body: AppBackground(
@@ -146,7 +145,32 @@ class ItemDetailPage extends ConsumerWidget {
                       onPressed: () async {
                         final confirmed =
                             await showDeleteConfirmation(context, item.name);
-                        if (confirmed == true && context.mounted) context.pop();
+                        if (confirmed == true && context.mounted) {
+                          // 1. Capture the boolean result
+                          final success = await ref
+                              .read(inventoryProvider.notifier)
+                              .discardItem(item.id);
+
+                          if (context.mounted) {
+                            if (success) {
+                              // 2. Only show this if the backend actually deleted it
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                    content: Text('${item.name} deleted')),
+                              );
+                              context.pop();
+                            } else {
+                              // 3. Show an error if it failed
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content:
+                                      Text('Failed to delete ${item.name}'),
+                                  backgroundColor: Colors.redAccent,
+                                ),
+                              );
+                            }
+                          }
+                        }
                       },
                       icon: const Icon(Icons.delete_outline,
                           color: AppColors.expired),

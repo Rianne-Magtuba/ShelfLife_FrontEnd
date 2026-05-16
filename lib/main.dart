@@ -8,15 +8,21 @@ import 'core/data/services/notification_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
   tz_data.initializeTimeZones();
   await LocalNotificationService.initialize();
   await LocalNotificationService.requestPermission();
   await CacheService.initialize();
   final cachedItems = CacheService.loadInventory();
   if (cachedItems.isNotEmpty) {
-    await LocalNotificationService.scheduleAllFromInventory(cachedItems);
-    debugPrint('[main] Rescheduled notifications from ${cachedItems.length} cached items');
+   try {
+      await LocalNotificationService.scheduleAllFromInventory(cachedItems);
+      debugPrint('[main] Rescheduled notifications from ${cachedItems.length} cached items');
+    } catch (e) {
+      debugPrint('[main] WARNING: Failed to schedule notifications. Missing exact alarm permission? Error: $e');
+    }
   }
+
   runApp(const ProviderScope(child: ShelfLifeApp()));
 }
 
