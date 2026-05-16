@@ -275,8 +275,9 @@ class _RegisterPageState extends State<RegisterPage> {
                           ),
                         ),
                         validator: (v) {
-                          if (v != _passCtrl.text)
+                          if (v != _passCtrl.text) {
                             return 'Passwords do not match';
+                          }
                           return null;
                         },
                       ).animate().fadeIn(delay: 300.ms),

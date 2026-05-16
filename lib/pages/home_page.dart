@@ -32,10 +32,12 @@ class _HomePageState extends ConsumerState<HomePage> {
   Future<void> _loadUser() async {
     final username = await _storage.read(key: 'username') ?? '';
     final email    = await _storage.read(key: 'email')    ?? '';
-    if (mounted) setState(() {
+    if (mounted) {
+      setState(() {
       _username = username;
       _email    = email;
     });
+    }
   }
 
   @override

@@ -28,7 +28,9 @@ class LoginResponse {
         final parts = token.split('.');
         if (parts.length != 3) return {};
         String payload = parts[1];
-        while (payload.length % 4 != 0) payload += '=';
+        while (payload.length % 4 != 0) {
+          payload += '=';
+        }
         final decoded = utf8.decode(base64Url.decode(payload));
         return jsonDecode(decoded) as Map<String, dynamic>;
       } catch (_) {

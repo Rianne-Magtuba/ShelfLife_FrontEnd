@@ -8,9 +8,10 @@ import '../../data/services/api_client.dart';
 import '../../data/services/cache_service.dart';
 import '../../data/services/notification_service.dart';
 import '../../common/entities/entities.dart';
-import '../dtos/user_dto.dart';
 
 class InventoryService implements IInventoryService {
+
+  
   @override
   Future<List<FoodItem>> getInventory() async {
     try {
@@ -39,14 +40,45 @@ class InventoryService implements IInventoryService {
     final response = await ApiClient.post('/api/inventory', request.toJson());
 
     if (response.statusCode == 200 || response.statusCode == 201) {
-      final item = InventoryItemResponse.fromJson(
-        jsonDecode(response.body) as Map<String, dynamic>,
-      ).toFoodItem();
+      debugPrint('[InventoryService] addItem response body: ${response.body}');
+
+      final json = jsonDecode(response.body) as Map<String, dynamic>;
+      
+      // Backend returns just a success message, not the created item
+      if (json.containsKey('message') && json.length == 1) {
+        debugPrint('[InventoryService] Backend returned success message: ${json['message']}');
+        // Build the item locally from the request and return it
+        // This ensures the item is added to local state immediately
+        return FoodItem(
+          id: 'temp_${DateTime.now().millisecondsSinceEpoch}',
+          name: request.customName ?? 'Item',
+          category: _parseCategory(request.customCategory ?? 'Others'),
+          quantity: request.quantity,
+          weight: request.customWeightGrams?.toStringAsFixed(0),
+          weightUnit: request.customWeightGrams != null ? 'g' : null,
+          expiryDate: request.expirationDate,
+          dateAdded: DateTime.now(),
+          purchasePrice: request.customPrice,
+          notes: request.notes.isNotEmpty ? request.notes : null,
+        );
+      }
+
+      // Backend returns the created item object
+      final item = InventoryItemResponse.fromJson(json).toFoodItem();
 
       await LocalNotificationService.scheduleExpiryNotification(item);
       return item;
     } else {
       throw Exception(ApiClient.parseError(response, 'Failed to add item.'));
+    }
+  }
+
+  static ItemCategory _parseCategory(String category) {
+    switch (category.toLowerCase()) {
+      case 'fridge':  return ItemCategory.fridge;
+      case 'pantry':  return ItemCategory.pantry;
+      case 'freezer': return ItemCategory.freezer;
+      default:        return ItemCategory.others;
     }
   }
 

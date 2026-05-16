@@ -1,4 +1,3 @@
-import '../entities/user.dart';
 import '../../business/dtos/user_dto.dart';
 
 abstract class IAuthService {

@@ -1,6 +1,6 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../common/entities/entities.dart';
-import '../../common/entities/notification.dart';
 import '../../data/services/cache_service.dart';
 import '../services/inventory_service.dart';
 import '../dtos/inventory_dto.dart';
@@ -27,6 +27,7 @@ class InventoryNotifier extends AsyncNotifier<List<FoodItem>> {
       state = AsyncValue.data([newItem, ...current]);
       return true;
     } catch (e) {
+      debugPrint('[InventoryNotifier] addItem error: $e'); 
       return false;
     }
   }

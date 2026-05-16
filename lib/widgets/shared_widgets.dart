@@ -622,6 +622,7 @@ class ProductBasicFields extends StatelessWidget {
   final String selectedCategory;
   final ValueChanged<String?> onCategoryChanged;
   final String? nameLabelOverride;
+  final bool isLocked;
 
   const ProductBasicFields({
     super.key,
@@ -630,6 +631,7 @@ class ProductBasicFields extends StatelessWidget {
     required this.selectedCategory,
     required this.onCategoryChanged,
     this.nameLabelOverride,
+    this.isLocked = false,
   });
 
   @override
@@ -638,11 +640,14 @@ class ProductBasicFields extends StatelessWidget {
       children: [
         TextFormField(
           controller: nameCtrl,
+          readOnly: isLocked, // Lock field
           textCapitalization: TextCapitalization.words,
           decoration: InputDecoration(
             labelText: nameLabelOverride ?? 'Product Name',
             hintText: 'e.g. Milk, Bread, Yogurt',
             prefixIcon: const Icon(Icons.label_outline, size: 18),
+            filled: isLocked,
+            fillColor: isLocked ? AppColors.inputBg.withOpacity(0.5) : null,
           ),
           validator: (v) => (v == null || v.trim().isEmpty)
               ? 'Product name is required'
@@ -651,7 +656,7 @@ class ProductBasicFields extends StatelessWidget {
         const SizedBox(height: 12),
         TextFormField(
           controller: barcodeCtrl,
-          readOnly: true, // scanner fills this, user doesn't type it
+          readOnly: true, 
           decoration: const InputDecoration(
             labelText: 'Barcode (optional)',
             prefixIcon: Icon(Icons.qr_code, size: 18),
@@ -661,13 +666,16 @@ class ProductBasicFields extends StatelessWidget {
         const SizedBox(height: 12),
         DropdownButtonFormField<String>(
           value: selectedCategory,
-          decoration: const InputDecoration(labelText: 'Category'),
+          decoration: InputDecoration(
+            labelText: 'Category',
+            filled: isLocked,
+            fillColor: isLocked ? AppColors.inputBg.withOpacity(0.5) : null,
+          ),
           items: AppStrings.categoriesNoAll
               .map((c) => DropdownMenuItem(
             value: c,
             child: Row(
               children: [
-                // Reuse the category icon and color from your existing extension
                 Icon(
                   ItemCategory.values
                       .firstWhere((e) => e.label == c,
@@ -683,9 +691,8 @@ class ProductBasicFields extends StatelessWidget {
                 Text(c, style: GoogleFonts.poppins(fontSize: 14)),
               ],
             ),
-          ))
-              .toList(),
-          onChanged: onCategoryChanged,
+          )).toList(),
+          onChanged: isLocked ? null : onCategoryChanged, // Disable if locked
           validator: (v) => v == null ? 'Required' : null,
         ),
       ],
