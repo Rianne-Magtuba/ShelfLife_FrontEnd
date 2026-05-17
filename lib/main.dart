@@ -4,7 +4,7 @@ import 'package:timezone/data/latest.dart' as tz_data;
 import 'app/router.dart';
 import 'constants/app_theme.dart';
 import 'core/data/services/cache_service.dart';
-import 'core/data/services/notification_service.dart';
+import 'core/business/services/notification_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

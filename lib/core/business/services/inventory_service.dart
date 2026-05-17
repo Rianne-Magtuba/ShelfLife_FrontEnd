@@ -1,36 +1,23 @@
-import 'dart:convert';
-import 'package:flutter/cupertino.dart';
-
-import '../../common/entities/food_item.dart';
-import '../../common/interfaces/i_inventory_service.dart';
-import '../dtos/inventory_dto.dart';
-import '../../data/services/api_client.dart';
-import '../../data/services/cache_service.dart';
-import '../../data/services/notification_service.dart';
+import 'package:flutter/foundation.dart';
 import '../../common/entities/entities.dart';
+import '../../common/interfaces/i_inventory_service.dart';  // ← correct interface
+import '../../data/services/inventory_data_service.dart';
+import '../../data/services/cache_service.dart';
+import '../dtos/inventory_dto.dart';
+import 'notification_service.dart';
 
-class InventoryService implements IInventoryService {
+class InventoryService implements IInventoryDataService {
+  final _data = InventoryDataService();
 
-  
   @override
-  Future<List<FoodItem>> getInventory() async {
+  Future<List<FoodItem>> fetchInventory() async {  // ← was getInventory
     try {
-      final response = await ApiClient.get('/api/inventory/pantry');
-
-      if (response.statusCode == 200) {
-        final jsonList = jsonDecode(response.body) as List<dynamic>;
-        final items = jsonList
-            .map((j) => InventoryItemResponse.fromJson(j as Map<String, dynamic>).toFoodItem())
-            .toList();
-        await CacheService.saveInventory(items);
-        await LocalNotificationService.scheduleAllFromInventory(items);
-        return items;
-      } else {
-        debugPrint('[Inventory] API returned ${response.statusCode} — loading from cache');
-        return CacheService.loadInventory(); // ← fallback so UI still shows
-      }
+      final items = await _data.fetchInventory();
+      await CacheService.saveInventory(items);
+      await LocalNotificationService.scheduleAllFromInventory(items);
+      return items;
     } catch (e) {
-      debugPrint('[Inventory] Error: $e — loading from cache');
+      debugPrint('[InventoryService] failed: $e — using cache');
       return CacheService.loadInventory();
     }
   }
@@ -73,15 +60,12 @@ Future<FoodItem> addItem(AddInventoryItemRequest request) async {
   }
 
   @override
-  Future<bool> discardItem(String inventoryId) async {
-    final response = await ApiClient.delete('/api/inventory/$inventoryId');
-
-    if (response.statusCode == 200 || response.statusCode == 204) {
+  Future<bool> deleteItem(String inventoryId) async {  // ← was discardItem
+    final success = await _data.deleteItem(inventoryId);
+    if (success) {
       await LocalNotificationService.cancelNotification(inventoryId);
       await CacheService.removeItem(inventoryId);
-      return true;
-    } else {
-      return false;
     }
+    return success;
   }
 }

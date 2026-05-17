@@ -51,14 +51,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     }
   }
 
-  String get _initials {
-    final parts = _displayName.trim().split(' ');
-    if (parts.length >= 2) return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
-    if (parts.isNotEmpty && parts[0].isNotEmpty) {
-      return parts[0][0].toUpperCase();
-    }
-    return '?';
-  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -255,6 +248,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
         ),
       ),
     );
+
   }
 
   // ── Helpers ──
@@ -276,40 +270,18 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
       child: Row(
         children: [
           GestureDetector(
-            onTap: () => _showAvatarOptions(context),
             child: Stack(
               children: [
-                Container(
-                  width: 64,
-                  height: 64,
-                  decoration: BoxDecoration(
-                    color: AppColors.mediumBlue.withOpacity(0.15),
-                    shape: BoxShape.circle,
-                    border: Border.all(color: AppColors.mediumBlue.withOpacity(0.3), width: 2),
-                  ),
-                  child: Center(
-                    child: Text(
-                      _initials,
-                      style: GoogleFonts.poppins(
-                        fontSize: 24,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.mediumBlue,
-                      ),
-                    ),
-                  ),
+                ProfileAvatar(
+                  name: _displayName,
+                  size: 64
                 ),
                 Positioned(
                   right: 0,
                   bottom: 0,
                   child: Container(
-                    width: 20,
-                    height: 20,
-                    decoration: const BoxDecoration(
-                      color: AppColors.mediumBlue,
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(Icons.camera_alt,
-                        color: Colors.white, size: 12),
+                      width: 20,
+                      height: 20
                   ),
                 ),
               ],
@@ -334,6 +306,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
       ),
     );
   }
+
 
   Widget _buildSectionLabel(String label) {
     return Padding(
@@ -592,48 +565,6 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     );
   }
 
-  void _showAvatarOptions(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-          borderRadius:
-              BorderRadius.vertical(top: Radius.circular(AppSizes.radiusXL))),
-      builder: (ctx) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const SizedBox(height: 12),
-              ListTile(
-                leading: const Icon(Icons.camera_alt_outlined,
-                    color: AppColors.mediumBlue),
-                title: Text('Take Photo',
-                    style: GoogleFonts.poppins(fontSize: 14)),
-                onTap: () => Navigator.pop(ctx),
-              ),
-              ListTile(
-                leading: const Icon(Icons.photo_library_outlined,
-                    color: AppColors.mediumBlue),
-                title: Text('Choose from Gallery',
-                    style: GoogleFonts.poppins(fontSize: 14)),
-                onTap: () => Navigator.pop(ctx),
-              ),
-              ListTile(
-                leading:
-                    const Icon(Icons.delete_outline, color: AppColors.expired),
-                title: Text('Remove Photo',
-                    style: GoogleFonts.poppins(
-                        fontSize: 14, color: AppColors.expired)),
-                onTap: () => Navigator.pop(ctx),
-              ),
-              const SizedBox(height: 16),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
 
   void _confirmLogout(BuildContext context) {
     showDialog(

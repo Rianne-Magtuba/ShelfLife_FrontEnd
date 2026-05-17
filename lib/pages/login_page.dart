@@ -5,7 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../constants/app_constants.dart';
 import '../core/business/dtos/user_dto.dart';
-import '../core/business/services/auth_service.dart';
+import '../core/business/services/auth_logicservice.dart';
 import '../widgets/shared_widgets.dart';
 import '../../app/router.dart';
 

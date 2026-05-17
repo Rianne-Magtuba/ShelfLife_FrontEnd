@@ -462,56 +462,90 @@ class SecondaryButton extends StatelessWidget {
 // ─── Profile Avatar ───────────────────────────────────────────────────────────
 
 class ProfileAvatar extends StatelessWidget {
-  final String initials;
+  final String name;          // ← raw name, not pre-computed initials
   final double size;
   final String? avatarPath;
+  final VoidCallback? onTap;
+  final bool showEditBadge;
 
-  const ProfileAvatar(
-      {super.key, required this.initials, this.size = 48, this.avatarPath});
+  const ProfileAvatar({
+    super.key,
+    required this.name,
+    this.size = 48,
+    this.avatarPath,
+    this.onTap,
+    this.showEditBadge = false,
+  });
+
+  // Single source of truth for initials logic
+  String get _initials {
+    final parts = name.trim().split(' ');
+    if (parts.length >= 2) return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
+    if (parts.isNotEmpty && parts[0].isNotEmpty) {
+      return parts[0][0].toUpperCase();
+    }
+    return '?';
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: size,
-      height: size,
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          colors: [AppColors.mediumBlue, AppColors.darkBlue],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        shape: BoxShape.circle,
-      ),
-      alignment: Alignment.center,
-      child: ClipOval(
-        child: Image.asset(
-          avatarPath ?? 'assets/images/placeholderPP.png',
+    final avatar = Stack(
+      children: [
+        Container(
           width: size,
           height: size,
-          fit: BoxFit.cover,
-          errorBuilder: (_, __, ___) => Container(
-            alignment: Alignment.center,
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                colors: [AppColors.mediumBlue, AppColors.darkBlue],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
+          decoration: BoxDecoration(
+            color: Colors.blueAccent.withOpacity(0.5),
+            shape: BoxShape.circle,
+            border: Border.all(color: AppColors.darkBlue.withOpacity(0.5), width: 2),
+          ),
+          alignment: Alignment.center,
+          child: avatarPath != null
+              ? ClipOval(
+            child: Image.asset(
+              avatarPath!,
+              width: size,
+              height: size,
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) => _initialsText(),
             ),
-            child: Text(
-              initials,
-              style: GoogleFonts.poppins(
-                color: Colors.white,
-                fontWeight: FontWeight.w700,
-                fontSize: size * 0.35,
+          )
+              : _initialsText(),
+        ),
+        if (showEditBadge)
+          Positioned(
+            right: 0,
+            bottom: 0,
+            child: Container(
+              width: size * 0.3,
+              height: size * 0.3,
+              decoration: const BoxDecoration(
+                color: AppColors.mediumBlue,
+                shape: BoxShape.circle,
               ),
+              child: Icon(Icons.camera_alt,
+                  color: Colors.white, size: size * 0.16),
             ),
           ),
-        ),
-      ),
+      ],
     );
+
+    if (onTap != null) {
+      return GestureDetector(onTap: onTap, child: avatar);
+    }
+    return avatar;
   }
+
+  Widget _initialsText() => Text(
+    _initials,
+    style: GoogleFonts.poppins(
+      color: Colors.white,
+      fontWeight: FontWeight.w700,
+      fontSize: size * 0.35,
+    ),
+  );
 }
+
 
 // ─── Search Bar ───────────────────────────────────────────────────────────────
 
@@ -646,8 +680,8 @@ class ProductBasicFields extends StatelessWidget {
             labelText: nameLabelOverride ?? 'Product Name',
             hintText: 'e.g. Milk, Bread, Yogurt',
             prefixIcon: const Icon(Icons.label_outline, size: 18),
-            filled: isLocked,
-            fillColor: isLocked ? AppColors.inputBg.withOpacity(0.5) : null,
+            filled: true,
+            fillColor: AppColors.inputBg,
           ),
           validator: (v) => (v == null || v.trim().isEmpty)
               ? 'Product name is required'
@@ -668,8 +702,8 @@ class ProductBasicFields extends StatelessWidget {
           value: selectedCategory,
           decoration: InputDecoration(
             labelText: 'Category',
-            filled: isLocked,
-            fillColor: isLocked ? AppColors.inputBg.withOpacity(0.5) : null,
+            filled: true,
+            fillColor: AppColors.inputBg,
           ),
           items: AppStrings.categoriesNoAll
               .map((c) => DropdownMenuItem(

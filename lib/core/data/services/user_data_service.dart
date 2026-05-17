@@ -1,11 +1,11 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import '../../common/interfaces/i_auth_service.dart';
-import '../dtos/user_dto.dart';
-import '../../data/services/api_client.dart';
+import '../../common/interfaces/i_user_data_service.dart';
+import '../../business/dtos/user_dto.dart';
+import 'api_client.dart';
 
-class AuthService implements IAuthService {
+class UserDataService implements IUserDataService {
   static const _storage = FlutterSecureStorage();
 
   @override
@@ -28,9 +28,9 @@ class AuthService implements IAuthService {
       return result;
     } else if (response.statusCode == 401) {
       throw Exception(ApiClient.parseError(response, 'Invalid email or password.'));
-    } else {
-      throw Exception(ApiClient.parseError(response, 'Login failed. Please try again.'));
     }
+
+    throw Exception(ApiClient.parseError(response, 'Login failed. Please try again.'));
   }
 
   @override
@@ -41,17 +41,16 @@ class AuthService implements IAuthService {
       requiresAuth: false,
     );
 
-    debugPrint('[Register] Status: ${response.statusCode}');
-    debugPrint('[Register] Body: ${response.body}');
+    debugPrint('[UserDataService] Register ${response.statusCode}');
 
     if (response.statusCode == 200 || response.statusCode == 201) return;
     if (response.statusCode == 409) {
       throw Exception(ApiClient.parseError(response, 'An account with this email already exists.'));
     } else if (response.statusCode == 400) {
       throw Exception(ApiClient.parseError(response, 'Please check your details and try again.'));
-    } else {
-      throw Exception(ApiClient.parseError(response, 'Registration failed. Please try again.'));
     }
+
+    throw Exception(ApiClient.parseError(response, 'Registration failed. Please try again.'));
   }
 
   @override
