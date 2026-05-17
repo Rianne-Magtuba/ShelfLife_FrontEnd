@@ -144,11 +144,11 @@ class _AddItemPageState extends ConsumerState<AddItemPage>
 
     final request = AddInventoryItemRequest(
       isCustomItem:      sendCustomDetails,
-      barcodeRef:        hasBarcode ? _barcodeCtrl.text.trim() : null,
-      customName:        sendCustomDetails ? _nameCtrl.text.trim() : null,
-      customCategory:    sendCustomDetails ? _category.label : null,
-      customWeightGrams: sendCustomDetails ? double.tryParse(_weightCtrl.text.trim()) : null,
-      customPrice:       sendCustomDetails ? double.tryParse(_priceCtrl.text.trim()) : null,
+      barcodeRef:        _barcodeCtrl.text.trim(),
+      customName:        _nameCtrl.text.trim(),
+      customCategory:    _category.label ,
+      customWeightGrams: double.tryParse(_weightCtrl.text.trim()),
+      customPrice:       double.tryParse(_priceCtrl.text.trim()),
       quantity:        _quantity,
       quality:         'Good',
       notes:           _notesCtrl.text.trim(),

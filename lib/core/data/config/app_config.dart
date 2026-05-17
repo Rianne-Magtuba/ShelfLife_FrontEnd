@@ -3,6 +3,6 @@ class AppConfig {
   // Never hardcoded, never commi
   static const apiBaseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'localhost', // only used in local dev
+    defaultValue: 'https://shelflife-api-1030171236919.asia-east1.run.app', // only used in local dev
   );
 }
