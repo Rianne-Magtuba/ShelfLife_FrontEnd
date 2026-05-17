@@ -79,7 +79,10 @@ class InventoryItemResponse {
     final weightGrams = (json['weightGrams'] ?? json['CustomWeightGrams']) as num?;
     final displayPrice = ((json['displayPrice'] ?? json['CustomPrice']) as num?)?.toDouble() ?? 0.0;
     final expirationDateStr = json['ExpirationDate'] ?? json['expirationDate'];
-
+    final parsedId = (json['inventoryId'] ?? json['InventoryId']) as String?;
+    if (parsedId == null || parsedId.isEmpty) {
+  throw Exception('Invalid inventory response: inventoryId is missing. Keys found: ${json.keys.toList()}');
+}
     debugPrint('[InventoryItemResponse.fromJson] displayName=$displayName, displayCategory=$displayCategory, expirationDateStr=$expirationDateStr');
 
     if (displayName == null || displayName.isEmpty) {
@@ -93,7 +96,7 @@ class InventoryItemResponse {
     }
 
     return InventoryItemResponse(
-      inventoryId:     json['inventoryId'] as String? ?? 'inv_${DateTime.now().millisecondsSinceEpoch}',
+      inventoryId:   parsedId,
       isCustomItem:    json['isCustomItem'] as bool? ?? json['IsCustomItem'] as bool? ?? true,
       barcodeRef:      json['barcodeRef'] as String? ?? json['BarcodeRef'] as String?,
       displayName:     displayName,

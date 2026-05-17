@@ -35,43 +35,33 @@ class InventoryService implements IInventoryService {
     }
   }
 
-  @override
-  Future<FoodItem> addItem(AddInventoryItemRequest request) async {
-    final response = await ApiClient.post('/api/inventory', request.toJson());
+@override
+Future<FoodItem> addItem(AddInventoryItemRequest request) async {
+  final response = await ApiClient.post('/api/inventory', request.toJson());
 
-    if (response.statusCode == 200 || response.statusCode == 201) {
-      debugPrint('[InventoryService] addItem response body: ${response.body}');
+  if (response.statusCode == 200 || response.statusCode == 201) {
+    final json = jsonDecode(response.body) as Map<String, dynamic>;
+    
+    // 1. Parse the backend response using your fixed DTO
+    final itemResponse = InventoryItemResponse.fromJson(json);
 
-      final json = jsonDecode(response.body) as Map<String, dynamic>;
-      
-      // Backend returns just a success message, not the created item
-      if (json.containsKey('message') && json.length == 1) {
-        debugPrint('[InventoryService] Backend returned success message: ${json['message']}');
-        // Build the item locally from the request and return it
-        // This ensures the item is added to local state immediately
-        return FoodItem(
-          id: 'temp_${DateTime.now().millisecondsSinceEpoch}',
-          name: request.customName ?? 'Item',
-          category: _parseCategory(request.customCategory ?? 'Others'),
-          quantity: request.quantity,
-          weight: request.customWeightGrams?.toStringAsFixed(0),
-          weightUnit: request.customWeightGrams != null ? 'g' : null,
-          expiryDate: request.expirationDate,
-          dateAdded: DateTime.now(),
-          purchasePrice: request.customPrice,
-          notes: request.notes.isNotEmpty ? request.notes : null,
-        );
-      }
-
-      // Backend returns the created item object
-      final item = InventoryItemResponse.fromJson(json).toFoodItem();
-
-      await LocalNotificationService.scheduleExpiryNotification(item);
-      return item;
-    } else {
-      throw Exception(ApiClient.parseError(response, 'Failed to add item.'));
-    }
+    // 2. Map the DTO to your local FoodItem model
+    return FoodItem(
+      id: itemResponse.inventoryId, // Guaranteed to be the real Firestore ID now
+      name: itemResponse.displayName,
+      category: _parseCategory(itemResponse.displayCategory),
+      quantity: itemResponse.quantity,
+      weight: itemResponse.weightGrams?.toStringAsFixed(0),
+      weightUnit: itemResponse.weightGrams != null ? 'g' : null,
+      expiryDate: itemResponse.expirationDate,
+      dateAdded: itemResponse.dateRegistered,
+      purchasePrice: itemResponse.displayPrice,
+      notes: itemResponse.notes.isNotEmpty ? itemResponse.notes : null,
+    );
   }
+
+  throw Exception('Failed to add item to inventory. Status: ${response.statusCode}');
+}
 
   static ItemCategory _parseCategory(String category) {
     switch (category.toLowerCase()) {
