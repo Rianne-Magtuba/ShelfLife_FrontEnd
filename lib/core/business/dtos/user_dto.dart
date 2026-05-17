@@ -69,4 +69,12 @@ class RegisterRequest {
     'Email':    email,
     'Password': password,
   };
+
+}
+
+class ResetPasswordRequest {
+  final String email;
+  const ResetPasswordRequest({required this.email});
+
+  Map<String, dynamic> toJson() => {'Email': email};
 }
