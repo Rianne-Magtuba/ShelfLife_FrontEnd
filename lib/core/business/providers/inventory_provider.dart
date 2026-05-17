@@ -12,17 +12,17 @@ class InventoryNotifier extends AsyncNotifier<List<FoodItem>> {
   Future<List<FoodItem>> build() async {
     final cached = CacheService.loadInventory();
     if (cached.isNotEmpty) state = AsyncValue.data(cached);
-    return _service.getInventory();
+    return _service.fetchInventory();
   }
 
   Future<void> refresh() async {
     state = const AsyncValue.loading();
-    state = await AsyncValue.guard(() => _service.getInventory());
+    state = await AsyncValue.guard(() => _service.fetchInventory());
   }
 
   Future<bool> addItem(AddInventoryItemRequest request) async {
     try {
-      final newItem = await _service.addItem(request);
+      final newItem = await _service.createItem(request);
       final current = state.value ?? [];
       state = AsyncValue.data([newItem, ...current]);
       return true;
@@ -34,7 +34,7 @@ class InventoryNotifier extends AsyncNotifier<List<FoodItem>> {
 
   Future<bool> discardItem(String inventoryId) async {
     try {
-      final success = await _service.discardItem(inventoryId);
+      final success = await _service.deleteItem(inventoryId);
       if (success) {
         final current = state.value ?? [];
         state = AsyncValue.data(
@@ -111,3 +111,4 @@ final statisticsProvider = Provider<Map<String, dynamic>>((ref) {
     'wastedByCategory':   wastedByCategory,
   };
 });
+

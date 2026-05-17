@@ -218,24 +218,9 @@ class _HomeHeader extends StatelessWidget {
       child: Row(
         children: [
           // ── Default profile icon instead of image ──
-          Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
-              shape: BoxShape.circle,
-              border: Border.all(color: Colors.white38, width: 1.5),
-            ),
-            child: Center(
-              child: Text(
-                initials,
-                style: GoogleFonts.poppins(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
-                  color: Colors.white,
-                ),
-              ),
-            ),
+          ProfileAvatar(
+            name: username,
+            size: 44,
           ),
           const SizedBox(width: 12),
           Expanded(

@@ -10,9 +10,29 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="e1327d63-42b0-4f65-9b94-2851c9546bc6" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/lib/core/business/services/auth_logicservice.dart" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/lib/core/business/services/notification_service.dart" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/lib/core/data/extensions/app_initializer.dart" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/lib/core/data/services/ product_data_service.dart" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/lib/core/data/services/inventory_data_service.dart" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/lib/core/data/services/user_data_service.dart" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/core/business/dtos/inventory_dto.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/core/business/dtos/inventory_dto.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/constants/app_constants.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/constants/app_constants.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/core/business/providers/inventory_provider.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/core/business/providers/inventory_provider.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/core/business/services/auth_service.dart" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/core/business/services/inventory_service.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/core/business/services/inventory_service.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/core/business/services/product_service.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/core/business/services/product_service.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/core/common/interfaces/i_auth_service.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/core/common/interfaces/i_user_data_service.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/core/common/interfaces/i_inventory_service.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/core/common/interfaces/i_inventory_service.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/core/common/interfaces/i_product_service.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/core/common/interfaces/i_product_service.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/core/data/services/notification_service.dart" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/main.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/main.dart" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/lib/pages/add_item_page.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/pages/add_item_page.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/pages/home_page.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/pages/home_page.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/pages/login_page.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/pages/login_page.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/pages/profile_page.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/pages/profile_page.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/pages/register_page.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/pages/register_page.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/widgets/shared_widgets.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/widgets/shared_widgets.dart" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -55,29 +75,30 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "Flutter.main.dart.executor": "Run",
-    "ModuleVcsDetector.initialDetectionPerformed": "true",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
-    "RunOnceActivity.cidr.known.project.marker": "true",
-    "RunOnceActivity.git.unshallow": "true",
-    "RunOnceActivity.readMode.enableVisualFormatting": "true",
-    "cf.first.check.clang-format": "false",
-    "cidr.known.project.marker": "true",
-    "dart.analysis.tool.window.visible": "false",
-    "git-widget-placeholder": "feat/backend-endpoint-integration",
-    "ignore.virus.scanning.warn.message": "true",
-    "io.flutter.project.isFirstOpen": "true",
-    "kotlin-language-version-configured": "true",
-    "last_opened_file_path": "D:/Flutter Projects/OfficialShelfLife_frntend/ShelfLife_FrontEnd",
-    "settings.editor.selected.configurable": "preferences.pluginManager",
-    "show.migrate.to.gradle.popup": "false"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;Flutter.main.dart.executor&quot;: &quot;Run&quot;,
+    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.cidr.known.project.marker&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.readMode.enableVisualFormatting&quot;: &quot;true&quot;,
+    &quot;cf.first.check.clang-format&quot;: &quot;false&quot;,
+    &quot;cidr.known.project.marker&quot;: &quot;true&quot;,
+    &quot;dart.analysis.tool.window.visible&quot;: &quot;false&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
+    &quot;ignore.virus.scanning.warn.message&quot;: &quot;true&quot;,
+    &quot;io.flutter.project.isFirstOpen&quot;: &quot;true&quot;,
+    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
+    &quot;last_opened_file_path&quot;: &quot;D:/Flutter Projects/OfficialShelfLife_frntend/ShelfLife_FrontEnd&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.pluginManager&quot;,
+    &quot;show.migrate.to.gradle.popup&quot;: &quot;false&quot;
   }
-}]]></component>
+}</component>
   <component name="RecentsManager">
     <key name="MoveFile.RECENT_KEYS">
+      <recent name="D:\Flutter Projects\OfficialShelfLife_frntend\ShelfLife_FrontEnd\lib\core\data\services" />
       <recent name="D:\Flutter Projects\OfficialShelfLife_frntend\ShelfLife_FrontEnd\lib\data\models" />
     </key>
   </component>

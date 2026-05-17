@@ -13,7 +13,6 @@ import '../core/business/dtos/product_dto.dart';
 import '../core/business/services/product_service.dart';
 import '../core/business/providers/inventory_provider.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
-import '../../core/common/interfaces/i_product_service.dart';
 
 
 class AddItemPage extends ConsumerStatefulWidget {
@@ -168,7 +167,7 @@ class _AddItemPageState extends ConsumerState<AddItemPage>
       // Register the product if it was scanned but didn't exist
       if (_isScannedNotRegistered && hasBarcode) {
         try {
-          await ProductService().registerProduct(
+          await ProductService().createProduct(
             ProductRequest(
               barcode: _barcodeCtrl.text.trim(),
               name: _nameCtrl.text.trim(),
@@ -264,6 +263,7 @@ class _AddItemPageState extends ConsumerState<AddItemPage>
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(10),
                       ),
+                      indicatorPadding: const EdgeInsets.symmetric(vertical: 2, horizontal: -10),
                       labelColor: AppColors.darkBlue,
                       unselectedLabelColor: Colors.white,
                       labelStyle: GoogleFonts.poppins(
@@ -278,7 +278,7 @@ class _AddItemPageState extends ConsumerState<AddItemPage>
                             children: [
                               Icon(Icons.qr_code_scanner_outlined, size: 15),
                               SizedBox(width: 4),
-                              Text('Scan Date'),
+                              Text('Scan Product '),
                             ],
                           ),
                         ),
@@ -342,7 +342,7 @@ class _AddItemPageState extends ConsumerState<AddItemPage>
                           });
 
                           try {
-                            final product = await ProductService().getProduct(barcode);
+                            final product = await ProductService().fetchProduct(barcode);
                             if (!mounted) return;
 
                             if (product != null) {
@@ -487,7 +487,7 @@ class _ManualFormState extends State<_ManualForm> with AutomaticKeepAliveClientM
               widget.onCategoryChanged(cat);
             },
           ),
-
+          const SizedBox(height: 12),
           // Quantity stepper
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -549,8 +549,8 @@ class _ManualFormState extends State<_ManualForm> with AutomaticKeepAliveClientM
                   decoration: InputDecoration(
                     labelText: 'Weight (optional)',
                     prefixIcon: const Icon(Icons.scale_outlined, size: 18),
-                    filled: widget.isProductLocked,
-                    fillColor: widget.isProductLocked ? AppColors.inputBg.withOpacity(0.5) : null,
+                    filled: true,
+                    fillColor: AppColors.inputBg,
                   ),
                 ),
               ),
@@ -642,8 +642,8 @@ class _ManualFormState extends State<_ManualForm> with AutomaticKeepAliveClientM
             decoration: InputDecoration(
               labelText: 'Purchase Price (₱)',
               prefixIcon: const Icon(Icons.payments_outlined, size: 18),
-              filled: widget.isProductLocked,
-              fillColor: widget.isProductLocked ? AppColors.inputBg.withOpacity(0.5) : null,
+              filled: true,
+              fillColor: AppColors.inputBg,
             ),
           ),
 

@@ -1,6 +1,6 @@
 import '../../business/dtos/user_dto.dart';
 
-abstract class IAuthService {
+abstract class IUserDataService {
   Future<LoginResponse> login(LoginRequest request);
   Future<void> register(RegisterRequest request);
   Future<void> logout();

@@ -30,6 +30,8 @@ class AppColors {
   static const Color cardBg = Colors.white;
   static const Color divider = Color(0xFFE5E7EB);
   static const Color inputBg = Color(0xFFF9FAFB);
+
+
 }
 
 class AppStrings {

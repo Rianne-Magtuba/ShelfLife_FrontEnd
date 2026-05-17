@@ -1,6 +1,6 @@
-import '../../business/dtos/product_dto.dart'; // ← single source
+import '../../business/dtos/product_dto.dart';
 
-abstract class IProductService {
-  Future<ProductResponse?> getProduct(String barcode);
-  Future<ProductResponse> registerProduct(ProductRequest request);
+abstract class IProductDataService {
+  Future<ProductResponse?> fetchProduct(String barcode);
+  Future<ProductResponse> createProduct(ProductRequest request);
 }
