@@ -18,4 +18,10 @@ class AuthService implements IUserDataService {
 
   @override
   Future<bool> isLoggedIn() => _data.isLoggedIn();
+  
+  @override
+  Future<void> sendPasswordReset(ResetPasswordRequest request) {
+    // TODO: implement sendPasswordReset
+    throw UnimplementedError();
+  }
 }
