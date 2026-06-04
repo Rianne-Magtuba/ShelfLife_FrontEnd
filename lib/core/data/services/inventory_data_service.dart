@@ -60,6 +60,19 @@ class InventoryDataService implements IInventoryDataService {
     return response.statusCode == 200 || response.statusCode == 204;
   }
 
+  @override
+Future<bool> updateItem(
+  String inventoryId,
+  AddInventoryItemRequest request,
+) async {
+  final response = await ApiClient.put(
+    '/api/inventory/$inventoryId',
+    request.toJson(),
+  );
+
+  return response.statusCode == 200;
+}
+
   static ItemCategory _parseCategory(String c) {
     switch (c.toLowerCase()) {
       case 'fridge':  return ItemCategory.fridge;

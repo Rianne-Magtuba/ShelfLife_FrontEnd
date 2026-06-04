@@ -32,6 +32,27 @@ class InventoryNotifier extends AsyncNotifier<List<FoodItem>> {
     }
   }
 
+  Future<bool> updateItem(
+    String inventoryId,
+    AddInventoryItemRequest request,
+    ) async {
+    try {
+      final success = await _service.updateItem(
+      inventoryId,
+      request,
+    );
+
+    if (success) {
+      await refresh(); // reload inventory from backend
+    }
+
+    return success;
+      } catch (e) {
+      debugPrint('[InventoryNotifier] updateItem error: $e');
+      return false;
+      }
+    }
+
   Future<bool> discardItem(String inventoryId) async {
     try {
       final success = await _service.deleteItem(inventoryId);
