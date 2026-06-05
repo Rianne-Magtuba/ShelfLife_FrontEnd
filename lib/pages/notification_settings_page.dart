@@ -1,31 +1,29 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../constants/app_constants.dart';
+import '../core/business/providers/inventory_provider.dart';
+import '../core/business/services/inventory_service.dart';
 import '../widgets/shared_widgets.dart';
 import '../core/common/entities/entities.dart';
 
-class NotificationSettingsPage extends StatefulWidget {
+class NotificationSettingsPage extends ConsumerStatefulWidget {
   const NotificationSettingsPage({super.key});
 
   @override
-  State<NotificationSettingsPage> createState() =>
+  ConsumerState<NotificationSettingsPage> createState() =>
       _NotificationSettingsPageState();
 }
 
-class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
+class _NotificationSettingsPageState extends ConsumerState<NotificationSettingsPage> {
   late NotificationSettings _settings;
 
   @override
   void initState() {
     super.initState();
-    _settings = NotificationSettings(
-      enabled:           true,
-      alertLeadDays:     3,
-      dailyReminderTime: const TimeOfDay(hour: 8, minute: 0),
-      frequency:         'daily',
-    );
+    _settings = InventoryService().getNotificationSettings();
   }
 
   @override
@@ -218,10 +216,14 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
                   const SizedBox(height: 28),
                   PrimaryButton(
                     label: 'Save Settings',
-                    onPressed: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Settings saved!')));
-                      context.pop();
+                    onPressed: () async {
+                      await ref.read(inventoryProvider.notifier).saveSettings(_settings);
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Settings saved!')),
+                        );
+                        context.pop();
+                      }
                     },
                   ).animate().fadeIn(delay: 250.ms),
                 ],

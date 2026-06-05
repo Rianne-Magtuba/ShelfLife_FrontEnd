@@ -1,9 +1,11 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
+import 'package:http/http.dart';
 import '../../common/entities/entities.dart';
 import '../../common/interfaces/i_inventory_service.dart';
 import '../../business/dtos/inventory_dto.dart';
 import 'api_client.dart';
+import 'cache_service.dart';
 
 class InventoryDataService implements IInventoryDataService {
 
@@ -26,52 +28,50 @@ class InventoryDataService implements IInventoryDataService {
 
   @override
   Future<FoodItem> createItem(AddInventoryItemRequest request) async {
-   final response = await ApiClient.post('/api/inventory', request.toJson());
+    final response = await ApiClient.post('/api/inventory', request.toJson());
 
-  if (response.statusCode == 200 || response.statusCode == 201) {
-    final json = jsonDecode(response.body) as Map<String, dynamic>;
-    
-    // 1. Parse the backend response using your fixed DTO
-    final itemResponse = InventoryItemResponse.fromJson(json);
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      final json = jsonDecode(response.body) as Map<String, dynamic>;
 
-    // 2. Map the DTO to your local FoodItem model
-    return FoodItem(
-      id: itemResponse.inventoryId, // Guaranteed to be the real Firestore ID now
-      name: itemResponse.displayName,
-      category: _parseCategory(itemResponse.displayCategory),
-      quantity: itemResponse.quantity,
-      weight: itemResponse.weightGrams?.toStringAsFixed(0),
-      weightUnit: itemResponse.weightGrams != null ? 'g' : null,
-      expiryDate: itemResponse.expirationDate,
-      dateAdded: itemResponse.dateRegistered,
-      purchasePrice: itemResponse.displayPrice,
-      notes: itemResponse.notes.isNotEmpty ? itemResponse.notes : null,
-    );
-  }
+      // 1. Parse the backend response using your fixed DTO
+      final itemResponse = InventoryItemResponse.fromJson(json);
 
-  throw Exception('Failed to add item to inventory. Status: ${response.statusCode}');
+      // 2. Map the DTO to your local FoodItem model
+      return FoodItem(
+        id: itemResponse.inventoryId, // Guaranteed to be the real Firestore ID now
+        name: itemResponse.displayName,
+        category: _parseCategory(itemResponse.displayCategory),
+        quantity: itemResponse.quantity,
+        weight: itemResponse.weightGrams?.toStringAsFixed(0),
+        weightUnit: itemResponse.weightGrams != null ? 'g' : null,
+        expiryDate: itemResponse.expirationDate,
+        dateAdded: itemResponse.dateRegistered,
+        purchasePrice: itemResponse.displayPrice,
+        notes: itemResponse.notes.isNotEmpty ? itemResponse.notes : null,
+      );
     }
 
+    throw Exception('Failed to add item to inventory. Status: ${response.statusCode}');
+  }
 
+  @override
+  Future<bool> updateItem(
+      String inventoryId,
+      AddInventoryItemRequest request,
+      ) async {
+    final response = await ApiClient.put(
+      '/api/inventory/$inventoryId',
+      request.toJson(),
+    );
+
+    return response.statusCode == 200;
+  }
 
   @override
   Future<bool> deleteItem(String inventoryId) async {
     final response = await ApiClient.delete('/api/inventory/$inventoryId');
     return response.statusCode == 200 || response.statusCode == 204;
   }
-
-  @override
-Future<bool> updateItem(
-  String inventoryId,
-  AddInventoryItemRequest request,
-) async {
-  final response = await ApiClient.put(
-    '/api/inventory/$inventoryId',
-    request.toJson(),
-  );
-
-  return response.statusCode == 200;
-}
 
   static ItemCategory _parseCategory(String c) {
     switch (c.toLowerCase()) {
@@ -81,4 +81,50 @@ Future<bool> updateItem(
       default:        return ItemCategory.others;
     }
   }
+
+  @override
+  Future<bool> consumeItem(String inventoryId) async {
+    final response = await ApiClient.delete(
+      '/api/inventory/$inventoryId/consume',
+    );
+    return response.statusCode == 200;
+  }
+
+  // ── Cache helpers ───────────────────────────────────────────────────────
+
+  @override
+  List<FoodItem> loadInventory() => CacheService.loadInventory();
+
+  @override
+  Future<void> saveInventory(List<FoodItem> items) =>
+      CacheService.saveInventory(items);
+
+  @override
+  Future<void> removeItem(String itemId) => CacheService.removeItem(itemId);
+
+  // ── Consumed / discarded counters ───────────────────────────────────────
+
+  @override
+  int loadConsumedCount() => CacheService.loadConsumedCount();
+
+  @override
+  int loadDiscardedCount() => CacheService.loadDiscardedCount();
+
+  @override
+  Future<void> incrementConsumed() => CacheService.incrementConsumed();
+
+  @override
+  Future<void> incrementDiscarded() => CacheService.incrementDiscarded();
+
+
+
+  // ── Notification settings ───────────────────────────────────────────────
+
+  @override
+  NotificationSettings loadNotificationSettings() =>
+      CacheService.loadNotificationSettings();
+
+  @override
+  Future<void> saveNotificationSettings(NotificationSettings settings) =>
+      CacheService.saveNotificationSettings(settings);
 }

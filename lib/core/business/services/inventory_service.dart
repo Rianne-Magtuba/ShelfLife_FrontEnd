@@ -6,56 +6,107 @@ import '../../data/services/cache_service.dart';
 import '../dtos/inventory_dto.dart';
 import 'notification_service.dart';
 
-class InventoryService implements IInventoryDataService {
-  final _data = InventoryDataService();
+class InventoryService {
 
-  @override
-  Future<List<FoodItem>> fetchInventory() async {  // ← was getInventory
+  final IInventoryDataService _data = InventoryDataService();
+  // ── Inventory CRUD ──────────────────────────────────────────────────────
+
+  Future<List<FoodItem>> fetchInventory() async {
+    final settings = _data.loadNotificationSettings();
     try {
       final items = await _data.fetchInventory();
-      await CacheService.saveInventory(items);
-      await LocalNotificationService.scheduleAllFromInventory(items);
+      await _data.saveInventory(items);
+      await LocalNotificationService.scheduleAllFromInventory(
+        items,
+        daysBeforeExpiry: settings.alertLeadDays,
+        reminderHour: settings.dailyReminderTime.hour,      // ← add
+        reminderMinute: settings.dailyReminderTime.minute,
+      );
       return items;
     } catch (e) {
-      debugPrint('[InventoryService] failed: $e — using cache');
-      return CacheService.loadInventory();
+      debugPrint('[InventoryService] fetch failed: $e — using cache');
+      return _data.loadInventory();
     }
   }
 
-@override
-Future<FoodItem> createItem(AddInventoryItemRequest request) async {
-    final item = await _data.createItem(request);
-    await LocalNotificationService.scheduleExpiryNotification(item);
+  Future<FoodItem> createItem(AddInventoryItemRequest request) async {
+    final item     = await _data.createItem(request);
+    final settings = _data.loadNotificationSettings();
+    await LocalNotificationService.scheduleExpiryNotification(
+      item,
+      daysBeforeExpiry: settings.alertLeadDays,
+      reminderHour: settings.dailyReminderTime.hour,      // ← add
+      reminderMinute: settings.dailyReminderTime.minute,
+    );
     return item;
-  
-}
-
-  static ItemCategory _parseCategory(String category) {
-    switch (category.toLowerCase()) {
-      case 'fridge':  return ItemCategory.fridge;
-      case 'pantry':  return ItemCategory.pantry;
-      case 'freezer': return ItemCategory.freezer;
-      default:        return ItemCategory.others;
-    }
   }
 
-  @override
-  Future<bool> deleteItem(String inventoryId) async {  // ← was discardItem
-    final success = await _data.deleteItem(inventoryId);
+  Future<bool> updateItem(
+      String inventoryId,
+      AddInventoryItemRequest request,
+      ) async {
+    final success = await _data.updateItem(inventoryId, request);
     if (success) {
+      // Reschedule notification — expiry date may have changed
+      final items = _data.loadInventory();
+      final updated = items.firstWhere(
+            (i) => i.id == inventoryId,
+        orElse: () => throw Exception('Item not found after update'),
+      );
+      final settings = _data.loadNotificationSettings();
       await LocalNotificationService.cancelNotification(inventoryId);
-      await CacheService.removeItem(inventoryId);
+      await LocalNotificationService.scheduleExpiryNotification(
+        updated,
+        daysBeforeExpiry: settings.alertLeadDays,
+      );
     }
     return success;
   }
 
-  @override
-  Future<bool> updateItem(
-    String inventoryId,
-    AddInventoryItemRequest request,
-    ) =>
-    _data.updateItem(
-      inventoryId,
-      request,
-    );
+  Future<bool> deleteItem(String inventoryId) async {
+    final success = await _data.deleteItem(inventoryId);
+    if (success) {
+      await LocalNotificationService.cancelNotification(inventoryId);
+      await _data.removeItem(inventoryId);
+    }
+    return success;
+  }
+
+  // ── Cache ───────────────────────────────────────────────────────────────
+
+  List<FoodItem> loadCached() => _data.loadInventory();
+
+  // ── Consumed / discarded ────────────────────────────────────────────────
+
+  Future<void> recordConsumed()  => _data.incrementConsumed();
+  Future<void> recordDiscarded() => _data.incrementDiscarded();
+  int getConsumedCount()         => _data.loadConsumedCount();
+  int getDiscardedCount()        => _data.loadDiscardedCount();
+
+  Future<bool> discardItem(String inventoryId) async {
+    final success = await _data.deleteItem(inventoryId);  // PATCH /discard
+    if (success) {
+      await LocalNotificationService.cancelNotification(inventoryId);
+      await _data.removeItem(inventoryId);
+    }
+    return success;
+  }
+
+  Future<bool> consumeItem(String inventoryId) async {
+    final success = await _data.consumeItem(inventoryId);  // PATCH /consume
+    if (success) {
+      await LocalNotificationService.cancelNotification(inventoryId);
+      await _data.removeItem(inventoryId);
+    }
+    return success;
+  }
+
+
+  // ── Notification settings ───────────────────────────────────────────────
+
+  NotificationSettings getNotificationSettings() =>
+      _data.loadNotificationSettings();
+
+  Future<void> saveNotificationSettings(NotificationSettings settings) =>
+      _data.saveNotificationSettings(settings);
 }

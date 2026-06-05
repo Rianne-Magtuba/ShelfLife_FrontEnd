@@ -1,71 +1,72 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../constants/app_constants.dart';
 import '../widgets/shared_widgets.dart';
+import '../core/business/providers/inventory_provider.dart';
+import '../core/business/services/analytics_service.dart';
 
-// ─── Mock Data ────────────────────────────────────────────────────────────────
+const _categoryColors = {
+  'Fridge':  AppColors.mediumBlue,
+  'Pantry':  Color(0xFF6B4A2B),
+  'Freezer': AppColors.lightBlue,
+  'Others':  Color(0xFFB0BEC5),
+};
 
-class _StatData {
-  static const int totalAdded = 142;
-  static const int totalExpired = 23;
-  static const int wasteSaved = 119;
-  static const double estimatedWasteCost = 47.80; // PHP or USD, locale-based
-  static const double consumedRatio = 0.84; // 84% consumed vs wasted
-
-  static const List<_CategoryStat> categoryBreakdown = [
-    _CategoryStat('Fridge', 45, AppColors.mediumBlue),
-    _CategoryStat('Pantry', 25, Color(0xFF6B4A2B)),
-    _CategoryStat('Freezer', 20, AppColors.lightBlue),
-    _CategoryStat('Others', 10, Color(0xFFB0BEC5)),
-  ];
-
-  static const List<_WeeklyExpiry> weeklyExpiry = [
-    _WeeklyExpiry('Mon', 2),
-    _WeeklyExpiry('Tue', 5),
-    _WeeklyExpiry('Wed', 3),
-    _WeeklyExpiry('Thu', 8),
-    _WeeklyExpiry('Fri', 28),
-    _WeeklyExpiry('Sat', 11),
-    _WeeklyExpiry('Sun', 4),
-  ];
-
-  static const List<_CategoryStat> wastedByCategory = [
-    _CategoryStat('Fridge', 8, AppColors.mediumBlue),
-    _CategoryStat('Pantry', 3, Color(0xFF6B4A2B)),
-    _CategoryStat('Freezer', 2, AppColors.lightBlue),
-    _CategoryStat('Others', 1, Color(0xFFB0BEC5)),
-  ];
-}
-
-class _CategoryStat {
-  final String label;
-  final int count;
-  final Color color;
-  const _CategoryStat(this.label, this.count, this.color);
-}
-
-class _WeeklyExpiry {
-  final String day;
-  final int count;
-  const _WeeklyExpiry(this.day, this.count);
-}
+Color _colorFor(String label) =>
+    _categoryColors[label] ?? AppColors.mediumBlue;
 
 // ─── Statistics Page ──────────────────────────────────────────────────────────
 
-class StatisticsPage extends StatefulWidget {
+class StatisticsPage extends ConsumerStatefulWidget  {
   const StatisticsPage({super.key});
 
   @override
-  State<StatisticsPage> createState() => _StatisticsPageState();
+  ConsumerState<StatisticsPage> createState() => _StatisticsPageState();
 }
 
-class _StatisticsPageState extends State<StatisticsPage> {
+class _StatisticsPageState extends ConsumerState<StatisticsPage> {
   int? _touchedDonutIndex;
   int? _touchedWastedIndex;
 
   @override
   Widget build(BuildContext context) {
+    final data = ref.watch(analyticsProvider);
+
+    // ── Empty state ──────────────────────────────────────────────────────
+    if (data.isEmpty) {
+      return AppBackground(
+        child: Column(
+          children: [
+            const StatisticsHeader(),
+            Expanded(
+              child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.bar_chart,
+                        size: 72, color: AppColors.lightBlue),
+                    const SizedBox(height: 16),
+                    Text('Not enough data yet',
+                        style: GoogleFonts.poppins(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.textSecondary)),
+                    const SizedBox(height: 8),
+                    Text('Add items to your pantry to see insights.',
+                        style: GoogleFonts.poppins(
+                            fontSize: 13,
+                            color: AppColors.textSecondary)),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: AppBackground(
@@ -79,15 +80,15 @@ class _StatisticsPageState extends State<StatisticsPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const SizedBox(height: 8),
-                    _buildSummaryRow(),
+                    _buildSummaryRow(data),
                     const SizedBox(height: 20),
-                    _buildConsumedRatioCard(),
+                    _buildConsumedRatioCard(data),
                     const SizedBox(height: 20),
-                    _buildCategoryBreakdown(),
+                    _buildCategoryBreakdown(data),
                     const SizedBox(height: 20),
-                    _buildExpiryTimeline(),
+                    _buildExpiryTimeline(data),
                     const SizedBox(height: 20),
-                    _buildMostWastedCategory(),
+                    _buildMostWastedCategory(data),
                     const SizedBox(height: 32),
                   ],
                 ),
@@ -101,28 +102,28 @@ class _StatisticsPageState extends State<StatisticsPage> {
 
   // ── Summary metric cards ──
 
-  Widget _buildSummaryRow() {
-    return const Row(
+  Widget _buildSummaryRow(AnalyticsResult data) {
+    return Row(
       children: [
         _MetricCard(
           icon: Icons.inventory_2_outlined,
           iconColor: AppColors.mediumBlue,
-          value: '${_StatData.totalAdded}',
+          value: '${data.totalAdded}',
           label: 'Items Added',
         ),
-        SizedBox(width: 10),
+        const SizedBox(width: 10),
         _MetricCard(
           icon: Icons.trending_down,
           iconColor: AppColors.expired,
-          value: '${_StatData.totalExpired}',
+          value: '${data.totalExpired}',
           label: 'Expired',
         ),
-        SizedBox(width: 10),
+        const SizedBox(width: 10),
         _MetricCard(
           icon: Icons.check_circle_outline,
           iconColor: AppColors.fresh,
-          value: '${_StatData.wasteSaved}',
-          label: 'Waste Saved',
+          value: '${data.totalConsumed}',
+          label: 'Consumed',
         ),
       ],
     );
@@ -130,9 +131,11 @@ class _StatisticsPageState extends State<StatisticsPage> {
 
   // ── Consumed vs wasted ratio ──
 
-  Widget _buildConsumedRatioCard() {
-    final consumed = (_StatData.consumedRatio * 100).toStringAsFixed(0);
-    final wasted = ((1 - _StatData.consumedRatio) * 100).toStringAsFixed(0);
+  Widget _buildConsumedRatioCard(AnalyticsResult data) {
+    final consumedPct = (data.consumedRatio * 100).toStringAsFixed(0);
+    final wastedPct   = ((1 - data.consumedRatio) * 100).toStringAsFixed(0);
+    final consumedFlex = (data.consumedRatio * 100).round().clamp(1, 99);
+
     return _SectionCard(
       title: 'Consumed vs Wasted',
       icon: Icons.pie_chart_outline,
@@ -141,9 +144,13 @@ class _StatisticsPageState extends State<StatisticsPage> {
         children: [
           Row(
             children: [
-              _LegendDot(color: AppColors.fresh, label: 'Consumed: $consumed%'),
+              _LegendDot(
+                  color: AppColors.fresh,
+                  label: 'Consumed: $consumedPct%'),
               const SizedBox(width: 16),
-              _LegendDot(color: AppColors.expired, label: 'Wasted: $wasted%'),
+              _LegendDot(
+                  color: AppColors.expired,
+                  label: 'Wasted: $wastedPct%'),
             ],
           ),
           const SizedBox(height: 12),
@@ -152,11 +159,11 @@ class _StatisticsPageState extends State<StatisticsPage> {
             child: Row(
               children: [
                 Expanded(
-                  flex: (_StatData.consumedRatio * 100).round(),
+                  flex: consumedFlex,
                   child: Container(height: 18, color: AppColors.fresh),
                 ),
                 Expanded(
-                  flex: 100 - (_StatData.consumedRatio * 100).round(),
+                  flex: 100 - consumedFlex,
                   child: Container(height: 18, color: AppColors.expired),
                 ),
               ],
@@ -164,7 +171,7 @@ class _StatisticsPageState extends State<StatisticsPage> {
           ),
           const SizedBox(height: 8),
           Text(
-            'Estimated waste cost: \$${_StatData.estimatedWasteCost.toStringAsFixed(2)}',
+            'Estimated waste cost: ₱${data.estimatedWasteCost.toStringAsFixed(2)}',
             style: GoogleFonts.poppins(
                 fontSize: 13, color: AppColors.textSecondary),
           ),
@@ -175,8 +182,24 @@ class _StatisticsPageState extends State<StatisticsPage> {
 
   // ── Category donut ──
 
-  Widget _buildCategoryBreakdown() {
-    final total = _StatData.categoryBreakdown.fold(0, (s, e) => s + e.count);
+  Widget _buildCategoryBreakdown(AnalyticsResult data) {
+    final entries = data.categoryBreakdown.entries.toList();
+    final total   = entries.fold(0, (s, e) => s + e.value);
+
+    if (entries.isEmpty) {
+      return _SectionCard(
+        title: 'Storage Category Breakdown',
+        icon: Icons.bar_chart,
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Text('No data yet',
+                style: GoogleFonts.poppins(color: AppColors.textSecondary)),
+          ),
+        ),
+      );
+    }
+
     return _SectionCard(
       title: 'Storage Category Breakdown',
       icon: Icons.bar_chart,
@@ -206,14 +229,13 @@ class _StatisticsPageState extends State<StatisticsPage> {
                     borderData: FlBorderData(show: false),
                     sectionsSpace: 3,
                     centerSpaceRadius: 55,
-                    sections:
-                        List.generate(_StatData.categoryBreakdown.length, (i) {
-                      final cat = _StatData.categoryBreakdown[i];
+                    sections: List.generate(entries.length, (i) {
+                      final entry     = entries[i];
                       final isTouched = i == _touchedDonutIndex;
-                      final pct = (cat.count / total * 100);
+                      final pct       = entry.value / total * 100;
                       return PieChartSectionData(
-                        color: cat.color,
-                        value: cat.count.toDouble(),
+                        color: _colorFor(entry.key),
+                        value: entry.value.toDouble(),
                         title: isTouched ? '' : '${pct.toStringAsFixed(0)}%',
                         radius: isTouched ? 65 : 55,
                         titleStyle: GoogleFonts.poppins(
@@ -222,7 +244,8 @@ class _StatisticsPageState extends State<StatisticsPage> {
                           color: Colors.white,
                         ),
                         badgeWidget: isTouched
-                            ? _DonutBadge(label: cat.label, count: cat.count)
+                            ? _DonutBadge(
+                            label: entry.key, count: entry.value)
                             : null,
                         badgePositionPercentageOffset: 1.3,
                       );
@@ -239,7 +262,8 @@ class _StatisticsPageState extends State<StatisticsPage> {
                             color: AppColors.textPrimary)),
                     Text('items',
                         style: GoogleFonts.poppins(
-                            fontSize: 12, color: AppColors.textSecondary)),
+                            fontSize: 12,
+                            color: AppColors.textSecondary)),
                   ],
                 ),
               ],
@@ -249,38 +273,44 @@ class _StatisticsPageState extends State<StatisticsPage> {
           Wrap(
             spacing: 16,
             runSpacing: 8,
-            children: _StatData.categoryBreakdown
-                .map((c) =>
-                    _LegendDot(color: c.color, label: '${c.label}: ${c.count}'))
+            children: entries
+                .map((e) => _LegendDot(
+              color: _colorFor(e.key),
+              label: '${e.key}: ${e.value}',
+            ))
                 .toList(),
           ),
         ],
       ),
     );
   }
-
   // ── Expiry timeline bar chart ──
 
-  Widget _buildExpiryTimeline() {
-    final maxVal = _StatData.weeklyExpiry
-        .map((e) => e.count)
+  Widget _buildExpiryTimeline(AnalyticsResult data) {
+    final entries = data.expiryByDay;
+
+    final maxVal = entries.isEmpty
+        ? 5.0
+        : entries
+        .map((e) => e.value)
         .reduce((a, b) => a > b ? a : b)
         .toDouble();
 
     return _SectionCard(
-      title: 'Expiry Timeline',
+      title: 'Expiry Timeline (Last 7 Days)',
       icon: Icons.timeline,
       child: SizedBox(
         height: 200,
         child: BarChart(
           BarChartData(
-            maxY: maxVal + 5,
+            maxY: maxVal + 2,
             barTouchData: BarTouchData(
               touchTooltipData: BarTouchTooltipData(
                 getTooltipItem: (group, groupIndex, rod, rodIndex) {
-                  final day = _StatData.weeklyExpiry[groupIndex].day;
+                  final label = AnalyticsService
+                      .dayKeyToLabel(entries[groupIndex].key);
                   return BarTooltipItem(
-                    '$day\n${rod.toY.toInt()} items',
+                    '$label\n${rod.toY.toInt()} items',
                     GoogleFonts.poppins(
                         color: Colors.white,
                         fontSize: 12,
@@ -295,14 +325,15 @@ class _StatisticsPageState extends State<StatisticsPage> {
                   showTitles: true,
                   getTitlesWidget: (val, meta) {
                     final i = val.toInt();
-                    if (i >= _StatData.weeklyExpiry.length) {
-                      return const SizedBox();
-                    }
+                    if (i >= entries.length) return const SizedBox();
                     return Padding(
                       padding: const EdgeInsets.only(top: 4),
-                      child: Text(_StatData.weeklyExpiry[i].day,
-                          style: GoogleFonts.poppins(
-                              fontSize: 11, color: AppColors.textSecondary)),
+                      child: Text(
+                        AnalyticsService.dayKeyToLabel(entries[i].key),
+                        style: GoogleFonts.poppins(
+                            fontSize: 11,
+                            color: AppColors.textSecondary),
+                      ),
                     );
                   },
                   reservedSize: 28,
@@ -319,10 +350,10 @@ class _StatisticsPageState extends State<StatisticsPage> {
                   ),
                 ),
               ),
-              topTitles:
-                  const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-              rightTitles:
-                  const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+              topTitles: const AxisTitles(
+                  sideTitles: SideTitles(showTitles: false)),
+              rightTitles: const AxisTitles(
+                  sideTitles: SideTitles(showTitles: false)),
             ),
             borderData: FlBorderData(show: false),
             gridData: FlGridData(
@@ -332,17 +363,16 @@ class _StatisticsPageState extends State<StatisticsPage> {
                 strokeWidth: 1,
               ),
             ),
-            barGroups: List.generate(_StatData.weeklyExpiry.length, (i) {
-              final item = _StatData.weeklyExpiry[i];
+            barGroups: List.generate(entries.length, (i) {
               return BarChartGroupData(
                 x: i,
                 barRods: [
                   BarChartRodData(
-                    toY: item.count.toDouble(),
+                    toY: entries[i].value.toDouble(),
                     color: AppColors.mediumBlue,
                     width: 22,
-                    borderRadius:
-                        const BorderRadius.vertical(top: Radius.circular(6)),
+                    borderRadius: const BorderRadius.vertical(
+                        top: Radius.circular(6)),
                   ),
                 ],
               );
@@ -353,48 +383,56 @@ class _StatisticsPageState extends State<StatisticsPage> {
     );
   }
 
+
   // ── Most wasted category ──
 
-  Widget _buildMostWastedCategory() {
-    final total = _StatData.wastedByCategory.fold(0, (s, e) => s + e.count);
-    final sorted = [..._StatData.wastedByCategory]
-      ..sort((a, b) => b.count.compareTo(a.count));
+  Widget _buildMostWastedCategory(AnalyticsResult data) {
+    final entries = data.wastedByCategory.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+    final total = entries.fold(0, (s, e) => s + e.value);
+
+    if (entries.isEmpty) {
+      return _SectionCard(
+        title: 'Most Wasted Category',
+        icon: Icons.warning_amber_outlined,
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Text('No expired items — great job!',
+              style: GoogleFonts.poppins(color: AppColors.textSecondary)),
+        ),
+      );
+    }
 
     return _SectionCard(
       title: 'Most Wasted Category',
       icon: Icons.warning_amber_outlined,
       child: Column(
-        children: sorted.map((cat) {
-          final frac = total > 0 ? cat.count / total : 0.0;
+        children: entries.map((entry) {
+          final frac = total > 0 ? entry.value / total : 0.0;
           return Padding(
             padding: const EdgeInsets.only(bottom: 12),
             child: Row(
               children: [
                 SizedBox(
                   width: 70,
-                  child: Text(cat.label,
+                  child: Text(entry.key,
                       style: GoogleFonts.poppins(
                           fontSize: 13, fontWeight: FontWeight.w500)),
                 ),
                 const SizedBox(width: 8),
                 Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(4),
-                        child: LinearProgressIndicator(
-                          value: frac,
-                          minHeight: 10,
-                          backgroundColor: AppColors.divider,
-                          color: cat.color,
-                        ),
-                      ),
-                    ],
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(4),
+                    child: LinearProgressIndicator(
+                      value: frac,
+                      minHeight: 10,
+                      backgroundColor: AppColors.divider,
+                      color: _colorFor(entry.key),
+                    ),
                   ),
                 ),
                 const SizedBox(width: 8),
-                Text('${cat.count} expired',
+                Text('${entry.value} expired',
                     style: GoogleFonts.poppins(
                         fontSize: 12, color: AppColors.textSecondary)),
               ],
@@ -405,6 +443,7 @@ class _StatisticsPageState extends State<StatisticsPage> {
     );
   }
 }
+
 
 // ─── Supporting Widgets ───────────────────────────────────────────────────────
 
