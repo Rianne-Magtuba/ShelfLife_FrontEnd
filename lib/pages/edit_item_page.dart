@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
+import 'package:shelllife/core/business/dtos/inventory_dto.dart';
 import '../constants/app_constants.dart';
 import '../widgets/shared_widgets.dart';
 import '../core/common/entities/entities.dart';
@@ -102,6 +103,59 @@ class _EditItemPageState extends ConsumerState<EditItemPage> {
   }
 
   Future<void> _save() async {
+  if (!_formKey.currentState!.validate()) return;
+
+  setState(() => _isSaving = true);
+
+  try {
+    final request = AddInventoryItemRequest(
+      isCustomItem: true,
+      barcodeRef: null,
+      customName: _nameCtrl.text.trim(),
+      customCategory: _selectedCategory.label,
+      customWeightGrams: _weightCtrl.text.trim().isEmpty
+          ? null
+          : double.tryParse(_weightCtrl.text.trim()),
+      customPrice: _priceCtrl.text.trim().isEmpty
+          ? null
+          : double.tryParse(_priceCtrl.text.trim()),
+      quantity: int.parse(_quantityCtrl.text.trim()),
+      quality: 'Good',
+      notes: _notesCtrl.text.trim(),
+      expirationDate: _expiryDate,
+    );
+
+    final success = await ref
+        .read(inventoryProvider.notifier)
+        .updateItem(_item.id, request);
+
+    if (!mounted) return;
+
+    if (success) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Item updated successfully')),
+      );
+      context.pop();
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Failed to update item')),
+      );
+    }
+  } catch (e) {
+    debugPrint('[EditItem] update error: $e');
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Something went wrong')),
+      );
+    }
+  } finally {
+    if (mounted) {
+      setState(() => _isSaving = false);
+    }
+  }
+}
+
+  /*Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _isSaving = true);
 
@@ -132,7 +186,7 @@ class _EditItemPageState extends ConsumerState<EditItemPage> {
       const SnackBar(content: Text('Item updated successfully!')),
     );
     context.pop();
-  }
+  }*/
 
   @override
   Widget build(BuildContext context) {

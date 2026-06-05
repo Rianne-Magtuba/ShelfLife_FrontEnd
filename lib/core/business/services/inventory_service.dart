@@ -48,4 +48,14 @@ Future<FoodItem> createItem(AddInventoryItemRequest request) async {
     }
     return success;
   }
+
+  @override
+  Future<bool> updateItem(
+    String inventoryId,
+    AddInventoryItemRequest request,
+    ) =>
+    _data.updateItem(
+      inventoryId,
+      request,
+    );
 }
