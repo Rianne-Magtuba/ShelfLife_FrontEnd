@@ -6,6 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import '../constants/app_constants.dart';
 import '../app/router.dart';
+import '../core/business/services/notification_service.dart';
 import '../widgets/shared_widgets.dart';
 import '../core/common/entities/entities.dart';
 import '../core/business/providers/inventory_provider.dart';
@@ -126,11 +127,33 @@ if (item == null) return const Center(child: CircularProgressIndicator());
                     const SizedBox(height: 24),
                     // Mark as consumed
                     ElevatedButton.icon(
-                      onPressed: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Marked as consumed!')),
-                        );
-                        context.pop();
+                      onPressed: () async {
+
+                      //  final testItem = ref.read(inventoryProvider).value?.first;
+                      //  if (testItem != null) {
+                       //   await LocalNotificationService.debugScheduleInSeconds(testItem, seconds: 5);
+                        //  debugPrint('[Test] Notification scheduled for ${testItem.name} in 5s');
+                        //}
+
+                        final success = await ref
+                            .read(inventoryProvider.notifier)
+                            .consumeItem(item.id);
+
+                        if (context.mounted) {
+                          if (success) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('${item.name} marked as consumed!')),
+                            );
+                            context.pop();
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Failed to mark as consumed'),
+                                backgroundColor: Colors.redAccent,
+                              ),
+                            );
+                          }
+                        }
                       },
                       icon: const Icon(Icons.check_circle_outline),
                       label: const Text('Mark as Consumed'),
@@ -240,21 +263,14 @@ class _ItemHeader extends StatelessWidget {
           const SizedBox(height: 12),
           Row(
             children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: Image.asset(
-                  item.imagePath ?? 'assets/images/placeholder.png',
-                  width: 72,
-                  height: 72,
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => Container(
-                    width: 72,
-                    height: 72,
-                    color: Colors.white24,
-                    child:
-                        Icon(item.category.icon, size: 36, color: Colors.white),
-                  ),
+              Container(
+                width: 72,
+                height: 72,
+                decoration: BoxDecoration(
+                  color: Colors.white24,
+                  borderRadius: BorderRadius.circular(12),
                 ),
+                child: Icon(item.category.icon, size: 36, color: Colors.white),
               ),
               const SizedBox(width: 16),
               Expanded(

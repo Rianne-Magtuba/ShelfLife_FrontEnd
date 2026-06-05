@@ -256,14 +256,14 @@ class _AddItemPageState extends ConsumerState<AddItemPage>
                       color: Colors.white.withOpacity(0.15),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    padding: const EdgeInsets.all(4),
+                    padding: const EdgeInsets.all(5),
                     child: TabBar(
                       controller: _tabController,
                       indicator: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(10),
                       ),
-                      indicatorPadding: const EdgeInsets.symmetric(vertical: 2, horizontal: -10),
+                      indicatorPadding: const EdgeInsets.symmetric(vertical: 1, horizontal: -10),
                       labelColor: AppColors.darkBlue,
                       unselectedLabelColor: Colors.white,
                       labelStyle: GoogleFonts.poppins(

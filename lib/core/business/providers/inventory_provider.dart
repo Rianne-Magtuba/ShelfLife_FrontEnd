@@ -2,15 +2,17 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../common/entities/entities.dart';
 import '../../data/services/cache_service.dart';
+import '../services/analytics_service.dart';
 import '../services/inventory_service.dart';
 import '../dtos/inventory_dto.dart';
+import '../services/notification_service.dart';
 
 class InventoryNotifier extends AsyncNotifier<List<FoodItem>> {
   final _service = InventoryService();
 
   @override
   Future<List<FoodItem>> build() async {
-    final cached = CacheService.loadInventory();
+    final cached = _service.loadCached();
     if (cached.isNotEmpty) state = AsyncValue.data(cached);
     return _service.fetchInventory();
   }
@@ -27,55 +29,88 @@ class InventoryNotifier extends AsyncNotifier<List<FoodItem>> {
       state = AsyncValue.data([newItem, ...current]);
       return true;
     } catch (e) {
-      debugPrint('[InventoryNotifier] addItem error: $e'); 
+      debugPrint('[InventoryNotifier] addItem error: $e');
       return false;
     }
   }
 
   Future<bool> updateItem(
-    String inventoryId,
-    AddInventoryItemRequest request,
-    ) async {
+      String inventoryId,
+      AddInventoryItemRequest request,
+      ) async {
     try {
-      final success = await _service.updateItem(
-      inventoryId,
-      request,
-    );
-
-    if (success) {
-      await refresh(); // reload inventory from backend
-    }
-
-    return success;
-      } catch (e) {
+      final success = await _service.updateItem(inventoryId, request);
+      if (success) await refresh();
+      return success;
+    } catch (e) {
       debugPrint('[InventoryNotifier] updateItem error: $e');
       return false;
-      }
     }
+  }
 
   Future<bool> discardItem(String inventoryId) async {
     try {
       final success = await _service.deleteItem(inventoryId);
       if (success) {
+        await _service.recordDiscarded();
         final current = state.value ?? [];
         state = AsyncValue.data(
           current.where((i) => i.id != inventoryId).toList(),
         );
-        await CacheService.removeItem(inventoryId);
       }
       return success;
     } catch (e) {
+      debugPrint('[InventoryNotifier] discardItem error: $e');
       return false;
     }
   }
+
+  Future<bool> consumeItem(String inventoryId) async {
+    try {
+      final success = await _service.consumeItem(inventoryId); // ← was deleteItem
+      if (success) {
+        await _service.recordConsumed();
+        final current = state.value ?? [];
+        state = AsyncValue.data(
+          current.where((i) => i.id != inventoryId).toList(),
+        );
+      }
+      return success;
+    } catch (e) {
+      debugPrint('[InventoryNotifier] consumeItem error: $e');
+      return false;
+    }
+  }
+
+  Future<void> saveSettings(NotificationSettings settings) async {
+    await _service.saveNotificationSettings(settings);
+    final items = state.value ?? [];
+    debugPrint('[Settings] Saving — enabled: ${settings.enabled}, leadDays: ${settings.alertLeadDays}');
+    if (settings.enabled) {
+      debugPrint('[Settings] Scheduling for ${items.length} items');
+      await LocalNotificationService.scheduleAllFromInventory(
+        items,
+        daysBeforeExpiry: settings.alertLeadDays,
+        reminderHour: settings.dailyReminderTime.hour,
+        reminderMinute: settings.dailyReminderTime.minute,
+      );
+    } else {
+      await LocalNotificationService.cancelAll();
+    }
+  }
 }
+
+// ── Providers ───────────────────────────────────────────────────────────────
 
 final inventoryProvider =
 AsyncNotifierProvider<InventoryNotifier, List<FoodItem>>(
   InventoryNotifier.new,
 );
 
-// Derived — notifications come from inventory, no separate API call
+final notificationSettingsProvider = StateProvider<NotificationSettings>((ref) {
+  return InventoryService().getNotificationSettings();
+});
+
 final notificationsProvider = Provider<List<AppNotification>>((ref) {
   final items = ref.watch(inventoryProvider).value ?? [];
   final now   = DateTime.now();
@@ -100,36 +135,15 @@ final notificationsProvider = Provider<List<AppNotification>>((ref) {
       ));
     }
   }
-
   return notifs;
 });
 
-// Derived — statistics computed locally from inventory
-final statisticsProvider = Provider<Map<String, dynamic>>((ref) {
-  final items = ref.watch(inventoryProvider).value ?? [];
-
-  final categoryBreakdown = <String, int>{};
-  final wastedByCategory  = <String, int>{};
-  double wasteCost = 0;
-  int expired = 0;
-
-  for (final item in items) {
-    final cat = item.category.label;
-    categoryBreakdown[cat] = (categoryBreakdown[cat] ?? 0) + 1;
-    if (item.status == ItemStatus.expired) {
-      expired++;
-      wastedByCategory[cat] = (wastedByCategory[cat] ?? 0) + 1;
-      if (item.purchasePrice != null) wasteCost += item.purchasePrice!;
-    }
-  }
-
-  return {
-    'totalAdded':         items.length,
-    'totalExpired':       expired,
-    'totalConsumed':      items.length - expired,
-    'estimatedWasteCost': wasteCost,
-    'categoryBreakdown':  categoryBreakdown,
-    'wastedByCategory':   wastedByCategory,
-  };
+final analyticsProvider = Provider<AnalyticsResult>((ref) {
+  final items   = ref.watch(inventoryProvider).value ?? [];
+  final service = InventoryService();
+  return AnalyticsService.compute(
+    items,
+    consumedCount:  service.getConsumedCount(),
+    discardedCount: service.getDiscardedCount(),
+  );
 });
-

@@ -111,6 +111,23 @@ class ApiClient {
     return response;
   }
 
+  static Future<http.Response> patch(
+      String path, {
+        Map<String, dynamic>? body,
+        bool requiresAuth = true,
+      }) async {
+    final headers = await _buildHeaders(requiresAuth: requiresAuth);
+    final uri = Uri.parse('$_baseUrl$path');
+    debugPrint('[API] PATCH $uri');
+    final response = await http.patch(
+      uri,
+      headers: headers,
+      body: body != null ? jsonEncode(body) : null,
+    );
+    _log(response, 'PATCH $path');
+    return response;
+  }
+
   // ── Error parsing ─────────────────────────────────────────────────────────
 
   /// Reads the error message the backend sends.

@@ -12,21 +12,24 @@ class LocalNotificationService {
   static const _channelName = 'Expiry Alerts';
   static const _channelDesc = 'Notifications for food items nearing expiry';
 
+
+
   // ── Initialize ────────────────────────────────────────────────────────────
 
   static Future<void> initialize() async {
     if (_initialized) return;
 
     tz_data.initializeTimeZones();
+    tz.setLocalLocation(tz.getLocation('Asia/Manila'));
 
     const androidSettings = AndroidInitializationSettings(
       '@mipmap/ic_launcher',
     );
 
     const iosSettings = DarwinInitializationSettings(
-      requestAlertPermission: false,
-      requestBadgePermission: false,
-      requestSoundPermission: false,
+      requestAlertPermission: true,   // ← was false
+      requestBadgePermission: true,   // ← was false
+      requestSoundPermission: true,   // ← was false
     );
 
     await _plugin.initialize(
@@ -36,9 +39,10 @@ class LocalNotificationService {
       ),
       onDidReceiveNotificationResponse: (details) {
         debugPrint('[Notifications] Tapped: ${details.payload}');
-        // TODO: navigate to item detail using details.payload as itemId
       },
     );
+
+    await requestPermission();
 
     _initialized = true;
     debugPrint('[Notifications] Initialized');
@@ -83,20 +87,23 @@ class LocalNotificationService {
   static Future<void> scheduleExpiryNotification(
       FoodItem item, {
         int daysBeforeExpiry = 3,
+        int reminderHour = 8,      // ← add
+        int reminderMinute = 0,    // ← add
       }) async {
-    final notifyDateTime = DateTime(
+    final location = tz.local;
+
+    final notifyDateTime = tz.TZDateTime(
+      location,
       item.expiryDate.year,
       item.expiryDate.month,
       item.expiryDate.day - daysBeforeExpiry,
-      8, // 8:00 AM
+      reminderHour,    // ← was hardcoded 8
+      reminderMinute,  // ← was hardcoded 0
       0,
     );
 
-    if (notifyDateTime.isBefore(DateTime.now())) {
-      debugPrint(
-        '[Notifications] Skipping "${item.name}" — '
-            'notify date is already past',
-      );
+    if (notifyDateTime.isBefore(tz.TZDateTime.now(location))) {
+      debugPrint('[Notifications] Skipping "${item.name}" — notify date is past');
       return;
     }
 
@@ -141,6 +148,8 @@ class LocalNotificationService {
   static Future<void> scheduleAllFromInventory(
       List<FoodItem> items, {
         int daysBeforeExpiry = 3,
+        int reminderHour = 8,      // ← add
+        int reminderMinute = 0,    // ← add
       }) async {
     await _plugin.cancelAll();
 
@@ -150,14 +159,13 @@ class LocalNotificationService {
         await scheduleExpiryNotification(
           item,
           daysBeforeExpiry: daysBeforeExpiry,
+          reminderHour: reminderHour,      // ← pass through
+          reminderMinute: reminderMinute,  // ← pass through
         );
         scheduled++;
       }
     }
-
-    debugPrint(
-      '[Notifications] Scheduled $scheduled of ${items.length} items',
-    );
+    debugPrint('[Notifications] Scheduled $scheduled of ${items.length} items');
   }
 
   // ── Cancel one ────────────────────────────────────────────────────────────

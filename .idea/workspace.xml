@@ -10,29 +10,24 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="e1327d63-42b0-4f65-9b94-2851c9546bc6" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/lib/core/business/services/auth_logicservice.dart" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/core/business/services/notification_service.dart" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/core/data/extensions/app_initializer.dart" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/core/data/services/ product_data_service.dart" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/core/data/services/inventory_data_service.dart" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/core/data/services/user_data_service.dart" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/lib/core/business/services/analytics_service.dart" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/constants/app_constants.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/constants/app_constants.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/assets/images/placeholderPP.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/assets/images/placeholderfood.png" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/lib/core/business/providers/inventory_provider.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/core/business/providers/inventory_provider.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/core/business/services/auth_service.dart" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/lib/core/business/services/inventory_service.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/core/business/services/inventory_service.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/core/business/services/product_service.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/core/business/services/product_service.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/core/common/interfaces/i_auth_service.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/core/common/interfaces/i_user_data_service.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/core/business/services/notification_service.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/core/business/services/notification_service.dart" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/lib/core/common/interfaces/i_inventory_service.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/core/common/interfaces/i_inventory_service.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/core/common/interfaces/i_product_service.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/core/common/interfaces/i_product_service.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/core/data/services/notification_service.dart" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/main.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/main.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/core/data/services/api_client.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/core/data/services/api_client.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/core/data/services/cache_service.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/core/data/services/cache_service.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/core/data/services/inventory_data_service.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/core/data/services/inventory_data_service.dart" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/lib/pages/add_item_page.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/pages/add_item_page.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/pages/home_page.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/pages/home_page.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/pages/login_page.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/pages/login_page.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/pages/profile_page.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/pages/profile_page.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/pages/register_page.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/pages/register_page.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/pages/item_detail_page.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/pages/item_detail_page.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/pages/notification_settings_page.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/pages/notification_settings_page.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/pages/statistics_page.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/pages/statistics_page.dart" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/lib/widgets/shared_widgets.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/widgets/shared_widgets.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pubspec.lock" beforeDir="false" afterPath="$PROJECT_DIR$/pubspec.lock" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pubspec.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/pubspec.yaml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -54,6 +49,13 @@
         </entry>
       </file>
     </leaf>
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Dart File" />
+      </list>
+    </option>
   </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
@@ -117,6 +119,17 @@
     <layout>
       <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
     </layout>
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>

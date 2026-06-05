@@ -184,20 +184,17 @@ class FoodItemCard extends StatelessWidget {
               child: Row(
                 children: [
                   // Thumbnail
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(AppSizes.radiusS),
-                    child: Image.asset(
-                      item.imagePath ?? 'assets/images/placeholderfood.png',
-                      width: 52,
-                      height: 52,
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => Container(
-                        width: 52,
-                        height: 52,
-                        color: AppColors.lightBlue,
-                        child: Icon(item.category.icon,
-                            color: item.category.color, size: 26),
-                      ),
+                  Container(
+                    width: 52,
+                    height: 52,
+                    decoration: BoxDecoration(
+                      color: item.category.color.withOpacity(0.12),
+                      borderRadius: BorderRadius.circular(AppSizes.radiusS),
+                    ),
+                    child: Icon(
+                      item.category.icon,
+                      color: item.category.color,
+                      size: 28,
                     ),
                   ),
                   const SizedBox(width: 12),

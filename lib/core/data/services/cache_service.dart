@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import '../../common/entities/entities.dart';
 
@@ -14,6 +15,7 @@ class CacheService {
     _initialized = true;
     debugPrint('[Cache] Initialized');
   }
+
 
   static Future<void> saveInventory(List<FoodItem> items) async {
     final box = Hive.box<String>(_inventoryBoxName);
@@ -82,4 +84,85 @@ class CacheService {
     notes:            map['notes']            as String?,
     consumeWithinDays: map['consumeWithinDays'] as int?,
   );
+
+  static const _notificationSettingsKey = 'meta_notification_settings';
+
+  static NotificationSettings loadNotificationSettings() {
+    final box = Hive.box<String>(_inventoryBoxName);
+    final raw = box.get(_notificationSettingsKey);
+    if (raw == null) {
+      return NotificationSettings(
+        enabled: true,
+        alertLeadDays: 3,
+        dailyReminderTime: TimeOfDay(hour: 8, minute: 0),
+        frequency: 'daily',
+      );
+    }
+    try {
+      final map = jsonDecode(raw) as Map<String, dynamic>;
+      return NotificationSettings(
+        enabled:            map['enabled']         as bool,
+        alertLeadDays:      map['alertLeadDays']   as int,
+        dailyReminderTime:  TimeOfDay(
+          hour:   map['reminderHour']   as int,
+          minute: map['reminderMinute'] as int,
+        ),
+        frequency:          map['frequency']       as String,
+      );
+    } catch (e) {
+      debugPrint('[Cache] Failed to parse notification settings: $e');
+      return NotificationSettings(
+        enabled: true,
+        alertLeadDays: 3,
+        dailyReminderTime: TimeOfDay(hour: 8, minute: 0),
+        frequency: 'daily',
+      );
+    }
+  }
+
+  static Future<void> saveNotificationSettings(
+      NotificationSettings settings) async {
+    final box = Hive.box<String>(_inventoryBoxName);
+    await box.put(
+      _notificationSettingsKey,
+      jsonEncode({
+        'enabled':       settings.enabled,
+        'alertLeadDays': settings.alertLeadDays,
+        'reminderHour':  settings.dailyReminderTime.hour,
+        'reminderMinute':settings.dailyReminderTime.minute,
+        'frequency':     settings.frequency,
+      }),
+    );
+    debugPrint('[Cache] Saved notification settings');
+  }
+
+// ── Consumed / Discarded Counters ─────────────────────────────────────────────
+
+  static const _consumedCountKey  = 'meta_consumed_count';
+  static const _discardedCountKey = 'meta_discarded_count';
+
+  static Future<void> incrementConsumed() async {
+    final box     = Hive.box<String>(_inventoryBoxName);
+    final current = int.tryParse(box.get(_consumedCountKey) ?? '0') ?? 0;
+    await box.put(_consumedCountKey, '${current + 1}');
+    debugPrint('[Cache] Consumed count → ${current + 1}');
+  }
+
+  static Future<void> incrementDiscarded() async {
+    final box     = Hive.box<String>(_inventoryBoxName);
+    final current = int.tryParse(box.get(_discardedCountKey) ?? '0') ?? 0;
+    await box.put(_discardedCountKey, '${current + 1}');
+    debugPrint('[Cache] Discarded count → ${current + 1}');
+  }
+
+  static int loadConsumedCount() {
+    final box = Hive.box<String>(_inventoryBoxName);
+    return int.tryParse(box.get(_consumedCountKey) ?? '0') ?? 0;
+  }
+
+  static int loadDiscardedCount() {
+    final box = Hive.box<String>(_inventoryBoxName);
+    return int.tryParse(box.get(_discardedCountKey) ?? '0') ?? 0;
+  }
+
 }
