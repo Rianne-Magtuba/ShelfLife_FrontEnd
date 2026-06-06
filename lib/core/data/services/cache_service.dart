@@ -26,15 +26,19 @@ class CacheService {
     debugPrint('[Cache] Saved ${items.length} items');
   }
 
+  static const _metaKeyPrefix = 'meta_';
   static List<FoodItem> loadInventory() {
+
     final box   = Hive.box<String>(_inventoryBoxName);
     final items = <FoodItem>[];
     for (final key in box.keys) {
+      final keyStr = key as String;
+      if (keyStr.startsWith(_metaKeyPrefix)) continue; // ← skip meta entries
       try {
-        final raw = box.get(key as String);
+        final raw = box.get(keyStr);
         if (raw != null) items.add(_fromMap(jsonDecode(raw) as Map<String, dynamic>));
       } catch (e) {
-        debugPrint('[Cache] Skipping corrupt entry $key: $e');
+        debugPrint('[Cache] Skipping corrupt entry $keyStr: $e');
       }
     }
     debugPrint('[Cache] Loaded ${items.length} items from disk');
@@ -47,8 +51,13 @@ class CacheService {
   }
 
   static Future<void> clearAll() async {
-    await Hive.box<String>(_inventoryBoxName).clear();
-    debugPrint('[Cache] Cleared all');
+    final box = Hive.box<String>(_inventoryBoxName);
+    final inventoryKeys = box.keys
+        .cast<String>()
+        .where((k) => !k.startsWith(_metaKeyPrefix))
+        .toList();
+    await box.deleteAll(inventoryKeys);
+    debugPrint('[Cache] Cleared all inventory items');
   }
 
   static Map<String, dynamic> _toMap(FoodItem item) => {

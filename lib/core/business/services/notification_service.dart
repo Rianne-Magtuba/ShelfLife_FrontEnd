@@ -213,6 +213,7 @@ class LocalNotificationService {
           _channelName,
           importance: Importance.max,
           priority:   Priority.max,
+          
         ),
         iOS: DarwinNotificationDetails(presentAlert: true),
       ),
