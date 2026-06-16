@@ -64,13 +64,27 @@ class InventoryDataService implements IInventoryDataService {
       request.toJson(),
     );
 
-    return response.statusCode == 200;
+    return response.statusCode >= 200 &&
+        response.statusCode < 300;
   }
 
   @override
   Future<bool> deleteItem(String inventoryId) async {
-    final response = await ApiClient.delete('/api/inventory/$inventoryId');
-    return response.statusCode == 200 || response.statusCode == 204;
+    final response =
+    await ApiClient.delete(
+      '/api/inventory/$inventoryId',
+    );
+
+    debugPrint(
+      '[DELETE] Status = ${response.statusCode}',
+    );
+
+    debugPrint(
+      '[DELETE] Body = ${response.body}',
+    );
+
+    return response.statusCode == 200 ||
+        response.statusCode == 204;
   }
 
   static ItemCategory _parseCategory(String c) {

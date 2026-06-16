@@ -6,4 +6,11 @@ abstract class IUserDataService {
   Future<void> logout();
   Future<bool> isLoggedIn();
   Future<void> sendPasswordReset(ResetPasswordRequest request);
+  Future<void> updateProfile(
+      UpdateProfileRequest request,
+      );
+
+  Future<void> changePassword(
+      ChangePasswordRequest request,
+      );
 }

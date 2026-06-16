@@ -8,6 +8,7 @@ class CacheService {
   static const _inventoryBoxName = 'inventory_v1';
   static bool _initialized = false;
 
+
   static Future<void> initialize() async {
     if (_initialized) return;
     await Hive.initFlutter();
@@ -19,7 +20,12 @@ class CacheService {
 
   static Future<void> saveInventory(List<FoodItem> items) async {
     final box = Hive.box<String>(_inventoryBoxName);
-    await box.clear();
+    final inventoryKeys = box.keys
+        .cast<String>()
+        .where((k) => !k.startsWith(_metaKeyPrefix))
+        .toList();
+
+    await box.deleteAll(inventoryKeys);
     for (final item in items) {
       await box.put(item.id, jsonEncode(_toMap(item)));
     }
@@ -94,11 +100,15 @@ class CacheService {
     consumeWithinDays: map['consumeWithinDays'] as int?,
   );
 
+
+  //all nottifs stuff
   static const _notificationSettingsKey = 'meta_notification_settings';
 
   static NotificationSettings loadNotificationSettings() {
     final box = Hive.box<String>(_inventoryBoxName);
+    debugPrint('[Cache] All keys: ${box.keys.toList()}'); // ← add this
     final raw = box.get(_notificationSettingsKey);
+    debugPrint('[Cache] Settings raw: $raw'); // ← and this
     if (raw == null) {
       return NotificationSettings(
         enabled: true,
@@ -145,16 +155,48 @@ class CacheService {
     debugPrint('[Cache] Saved notification settings');
   }
 
-// ── Consumed / Discarded Counters ─────────────────────────────────────────────
+// stats stuff ── Consumed / Discarded Counters ─────────────────────────────────────────────
 
   static const _consumedCountKey  = 'meta_consumed_count';
   static const _discardedCountKey = 'meta_discarded_count';
+  static const _fridgeConsumedKey = 'meta_fridge_consumed';
+  static const _pantryConsumedKey = 'meta_pantry_consumed';
+  static const _freezerConsumedKey = 'meta_freezer_consumed';
+  static const _othersConsumedKey = 'meta_others_consumed';
+  static const _fridgeDiscardedKey = 'meta_fridge_discarded';
+  static const _pantryDiscardedKey = 'meta_pantry_discarded';
+  static const _freezerDiscardedKey = 'meta_freezer_discarded';
+  static const _othersDiscardedKey = 'meta_others_discarded';
+
+  static const _addedCountKey = 'meta_added_count';
+  static String _consumedDayKey(DateTime date) =>
+      'meta_consumed_${date.year}_${date.month}_${date.day}';
+
+  static Future<void> incrementAdded() async {
+    final box = Hive.box<String>(_inventoryBoxName);
+
+    final current =
+        int.tryParse(box.get(_addedCountKey) ?? '0') ?? 0;
+
+    await box.put(_addedCountKey, '${current + 1}');
+  }
+
+  static int loadAddedCount() {
+    final box = Hive.box<String>(_inventoryBoxName);
+
+    return int.tryParse(
+        box.get(_addedCountKey) ?? '0'
+    ) ?? 0;
+  }
 
   static Future<void> incrementConsumed() async {
     final box     = Hive.box<String>(_inventoryBoxName);
     final current = int.tryParse(box.get(_consumedCountKey) ?? '0') ?? 0;
     await box.put(_consumedCountKey, '${current + 1}');
     debugPrint('[Cache] Consumed count → ${current + 1}');
+    debugPrint(
+      '[Cache] Box keys after save = ${box.keys.toList()}',
+    );
   }
 
   static Future<void> incrementDiscarded() async {
@@ -166,12 +208,163 @@ class CacheService {
 
   static int loadConsumedCount() {
     final box = Hive.box<String>(_inventoryBoxName);
-    return int.tryParse(box.get(_consumedCountKey) ?? '0') ?? 0;
+    debugPrint(
+      '[Cache] Box keys during load = ${box.keys.toList()}',
+    );
+
+    final value =
+        int.tryParse(
+            box.get(_consumedCountKey) ?? '0'
+        ) ?? 0;
+
+    debugPrint(
+        '[Cache] Consumed count loaded = $value');
+
+    return value;
   }
 
   static int loadDiscardedCount() {
     final box = Hive.box<String>(_inventoryBoxName);
-    return int.tryParse(box.get(_discardedCountKey) ?? '0') ?? 0;
+
+    final value =
+        int.tryParse(
+            box.get(_discardedCountKey) ?? '0'
+        ) ?? 0;
+
+    debugPrint(
+        '[Cache] discarded count loaded = $value');
+
+    return value;
   }
+
+  static Future<void> incrementConsumedCategory(
+      ItemCategory category) async {
+
+    final box = Hive.box<String>(_inventoryBoxName);
+
+    String key;
+
+    switch (category) {
+      case ItemCategory.fridge:
+        key = _fridgeConsumedKey;
+        break;
+
+      case ItemCategory.pantry:
+        key = _pantryConsumedKey;
+        break;
+
+      case ItemCategory.freezer:
+        key = _freezerConsumedKey;
+        break;
+
+      default:
+        key = _othersConsumedKey;
+    }
+
+    final current =
+        int.tryParse(box.get(key) ?? '0') ?? 0;
+
+    await box.put(key, '${current + 1}');
+  }
+
+  static Future<void> incrementDiscardedCategory(
+      ItemCategory category) async {
+
+    final box = Hive.box<String>(_inventoryBoxName);
+
+    String key;
+
+    switch (category) {
+      case ItemCategory.fridge:
+        key = _fridgeDiscardedKey;
+        break;
+
+      case ItemCategory.pantry:
+        key = _pantryDiscardedKey;
+        break;
+
+      case ItemCategory.freezer:
+        key = _freezerDiscardedKey;
+        break;
+
+      default:
+        key = _othersDiscardedKey;
+    }
+
+    final current =
+        int.tryParse(box.get(key) ?? '0') ?? 0;
+
+    await box.put(key, '${current + 1}');
+  }
+  static Map<String, int> loadDiscardedCategories() {
+    final box = Hive.box<String>(_inventoryBoxName);
+
+    return {
+      'Fridge':
+      int.tryParse(
+        box.get(_fridgeDiscardedKey) ?? '0',
+      ) ?? 0,
+
+      'Pantry':
+      int.tryParse(
+        box.get(_pantryDiscardedKey) ?? '0',
+      ) ?? 0,
+
+      'Freezer':
+      int.tryParse(
+        box.get(_freezerDiscardedKey) ?? '0',
+      ) ?? 0,
+
+      'Others':
+      int.tryParse(
+        box.get(_othersDiscardedKey) ?? '0',
+      ) ?? 0,
+    };
+  }
+
+  static Future<void> incrementConsumedDay() async {
+    final box = Hive.box<String>(_inventoryBoxName);
+
+    final key = _consumedDayKey(DateTime.now());
+
+    final current =
+        int.tryParse(box.get(key) ?? '0') ?? 0;
+
+    await box.put(key, '${current + 1}');
+  }
+
+  static List<MapEntry<String, int>> loadConsumedTimeline() {
+    final box = Hive.box<String>(_inventoryBoxName);
+
+    final now = DateTime.now();
+
+    final result = <MapEntry<String, int>>[];
+
+    for (int i = 6; i >= 0; i--) {
+      final date = now.subtract(Duration(days: i));
+
+      final key = _consumedDayKey(date);
+
+      final count =
+          int.tryParse(box.get(key) ?? '0') ?? 0;
+
+      result.add(
+        MapEntry(
+          '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}',
+          count,
+        ),
+      );
+    }
+
+    return result;
+  }
+
+  //cache stuff
+  static Future<void> clearAllData() async {
+    final box = Hive.box<String>(_inventoryBoxName);
+    await box.clear(); // wipes everything including meta keys
+    debugPrint('[Cache] Full cache cleared');
+  }
+
 
 }

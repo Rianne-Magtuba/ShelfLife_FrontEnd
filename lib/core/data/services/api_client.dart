@@ -40,6 +40,10 @@ class ApiClient {
 
     if (requiresAuth) {
       final token = await getToken();
+      debugPrint(
+          '[API] Token exists: ${token != null}'
+      );
+
       if (token != null) {
         // This single line is what "Bearer token" means in practice.
         // The backend's [Authorize] attribute reads this header,
@@ -148,10 +152,18 @@ class ApiClient {
     }
   }
 
+  // Add at the top of the class
+  static VoidCallback? onUnauthorized;
+
+// Update _log to call it
   static void _log(http.Response r, String label) {
     debugPrint('[API] ${r.statusCode} ← $label');
     if (r.statusCode >= 400) {
       debugPrint('[API] Error body: ${r.body}');
+    }
+    if (r.statusCode == 401) {
+      debugPrint('[API] 401 detected — token likely expired');
+      onUnauthorized?.call();
     }
   }
 }

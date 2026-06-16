@@ -1,22 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../constants/app_constants.dart';
 import '../core/business/dtos/user_dto.dart';
+import '../core/business/providers/inventory_provider.dart';
 import '../core/business/services/auth_logicservice.dart';
+import '../core/data/services/cache_service.dart';
 import '../widgets/shared_widgets.dart';
 import '../../app/router.dart';
 
-class LoginPage extends StatefulWidget {
+class LoginPage extends ConsumerStatefulWidget {
   const LoginPage({super.key});
-
   @override
-  State<LoginPage> createState() => _LoginPageState();
+  ConsumerState<LoginPage> createState() => _LoginPageState();
 }
-
-class _LoginPageState extends State<LoginPage> {
+class _LoginPageState extends ConsumerState<LoginPage> {
   final _formKey = GlobalKey<FormState>();
   final _emailCtrl = TextEditingController();
   final _passCtrl = TextEditingController();
@@ -42,9 +43,10 @@ class _LoginPageState extends State<LoginPage> {
           password: _passCtrl.text,
         ),
       );
+      await CacheService.clearAllData();
+      ref.invalidate(inventoryProvider);  // ← add this
       if (!mounted) return;
       context.go(AppRoutes.home);
-
     } catch (e) {
       if (!mounted) return;
       setState(() {

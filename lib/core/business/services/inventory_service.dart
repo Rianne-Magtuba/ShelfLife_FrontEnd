@@ -5,6 +5,7 @@ import '../../data/services/inventory_data_service.dart';
 import '../../data/services/cache_service.dart';
 import '../dtos/inventory_dto.dart';
 import 'notification_service.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class InventoryService {
 
@@ -47,17 +48,26 @@ class InventoryService {
       ) async {
     final success = await _data.updateItem(inventoryId, request);
     if (success) {
-      // Reschedule notification — expiry date may have changed
-      final items = _data.loadInventory();
-      final updated = items.firstWhere(
+      // Fetch fresh inventory from backend
+      final freshItems = await _data.fetchInventory();
+
+      // Update cache with fresh data
+      await _data.saveInventory(freshItems);
+
+      final updated = freshItems.firstWhere(
             (i) => i.id == inventoryId,
-        orElse: () => throw Exception('Item not found after update'),
+        orElse: () => throw Exception('Updated item not found'),
       );
+
       final settings = _data.loadNotificationSettings();
+
       await LocalNotificationService.cancelNotification(inventoryId);
+
       await LocalNotificationService.scheduleExpiryNotification(
         updated,
         daysBeforeExpiry: settings.alertLeadDays,
+        reminderHour: settings.dailyReminderTime.hour,
+        reminderMinute: settings.dailyReminderTime.minute,
       );
     }
     return success;
@@ -109,4 +119,51 @@ class InventoryService {
 
   Future<void> saveNotificationSettings(NotificationSettings settings) =>
       _data.saveNotificationSettings(settings);
+
+  //----send request info change method
+
+  Future<void> sendCorrectionEmail({
+    required String barcode,
+    required String currentName,
+    required String currentCategory,
+    required String currentWeight,
+
+    required String requestedName,
+    required String requestedCategory,
+    required String requestedWeight,
+
+    required String reason,
+  }) async {
+
+    final body = '''
+Barcode: $barcode
+
+CURRENT VALUES
+Name: $currentName
+Category: $currentCategory
+Weight: $currentWeight
+
+REQUESTED VALUES
+Name: $requestedName
+Category: $requestedCategory
+Weight: $requestedWeight
+
+Reason:
+$reason
+''';
+
+    final uri = Uri(
+      scheme: 'mailto',
+      path: 'yourdeveloper@email.com',
+      queryParameters: {
+        'subject': 'Product Correction Request',
+        'body': body,
+      },
+    );
+
+    await launchUrl(
+      uri,
+      mode: LaunchMode.externalApplication,
+    );
+  }
 }

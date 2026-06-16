@@ -11,16 +11,30 @@ import '../widgets/shared_widgets.dart';
 import '../core/common/entities/entities.dart';
 import '../core/business/providers/inventory_provider.dart';
 import 'package:collection/collection.dart';
-class ItemDetailPage extends ConsumerWidget {
+class ItemDetailPage extends ConsumerStatefulWidget {
   final String itemId;
-  const ItemDetailPage({super.key, required this.itemId});
+
+  const ItemDetailPage({
+    super.key,
+    required this.itemId,
+  });
+  @override
+  ConsumerState<ItemDetailPage> createState() =>
+      _ItemDetailPageState();
+}
+
+
+class _ItemDetailPageState extends ConsumerState<ItemDetailPage>{
+
+  bool _isConsuming = false;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
- final inventoryItems = ref.watch(inventoryProvider).value;
-final item = inventoryItems?.firstWhereOrNull((i) => i.id == itemId);
+  Widget build(BuildContext context) {
+    final inventoryItems = ref.watch(inventoryProvider).value;
+    final item = inventoryItems?.firstWhereOrNull((i) => i.id == widget.itemId);
+    final isExpired = item?.status == ItemStatus.expired;
 
-if (item == null) return const Center(child: CircularProgressIndicator());
+    if (item == null) return const Center(child: CircularProgressIndicator());
 
     return Scaffold(
       body: AppBackground(
@@ -105,7 +119,7 @@ if (item == null) return const Center(child: CircularProgressIndicator());
                             _InfoRow(
                                 label: 'Purchase Price',
                                 value:
-                                    '₱${item.purchasePrice!.toStringAsFixed(2)}'),
+                                '₱${item.purchasePrice!.toStringAsFixed(2)}'),
                         ],
                       ).animate().fadeIn(delay: 200.ms),
                     ],
@@ -127,23 +141,29 @@ if (item == null) return const Center(child: CircularProgressIndicator());
                     const SizedBox(height: 24),
                     // Mark as consumed
                     ElevatedButton.icon(
-                      onPressed: () async {
+                      onPressed: _isConsuming
+                          ? null
+                          : () async {
+                        setState(() {
+                          _isConsuming = true;
+                        });
 
-                      //  final testItem = ref.read(inventoryProvider).value?.first;
-                      //  if (testItem != null) {
-                       //   await LocalNotificationService.debugScheduleInSeconds(testItem, seconds: 5);
-                        //  debugPrint('[Test] Notification scheduled for ${testItem.name} in 5s');
-                        //}
+                        try {
+                          final success = await ref
+                              .read(inventoryProvider.notifier)
+                              .consumeItem(item.id);
 
-                        final success = await ref
-                            .read(inventoryProvider.notifier)
-                            .consumeItem(item.id);
+                          if (!mounted) return;
 
-                        if (context.mounted) {
                           if (success) {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text('${item.name} marked as consumed!')),
+                              SnackBar(
+                                content: Text(
+                                  '${item.name} marked as consumed!',
+                                ),
+                              ),
                             );
+
                             context.pop();
                           } else {
                             ScaffoldMessenger.of(context).showSnackBar(
@@ -152,6 +172,12 @@ if (item == null) return const Center(child: CircularProgressIndicator());
                                 backgroundColor: Colors.redAccent,
                               ),
                             );
+                          }
+                        } finally {
+                          if (mounted) {
+                            setState(() {
+                              _isConsuming = false;
+                            });
                           }
                         }
                       },
@@ -167,7 +193,12 @@ if (item == null) return const Center(child: CircularProgressIndicator());
                     OutlinedButton.icon(
                       onPressed: () async {
                         final confirmed =
-                            await showDeleteConfirmation(context, item.name);
+                        await showDeleteConfirmation(
+                          context,
+                          item.name,
+                          isExpired,
+                        );
+                        debugPrint('confirmed = $confirmed');
                         if (confirmed == true && context.mounted) {
                           // 1. Capture the boolean result
                           final success = await ref
@@ -187,7 +218,7 @@ if (item == null) return const Center(child: CircularProgressIndicator());
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
                                   content:
-                                      Text('Failed to delete ${item.name}'),
+                                  Text('Failed to delete ${item.name}'),
                                   backgroundColor: Colors.redAccent,
                                 ),
                               );
@@ -197,8 +228,14 @@ if (item == null) return const Center(child: CircularProgressIndicator());
                       },
                       icon: const Icon(Icons.delete_outline,
                           color: AppColors.expired),
-                      label: const Text('Delete Item',
-                          style: TextStyle(color: AppColors.expired)),
+                      label: Text(
+                        isExpired
+                            ? 'Discard Expired Item'
+                            : 'Delete Item',
+                        style: const TextStyle(
+                          color: AppColors.expired,
+                        ),
+                      ),
                       style: OutlinedButton.styleFrom(
                         side: const BorderSide(color: AppColors.expired),
                         minimumSize: const Size(double.infinity, 50),
@@ -212,7 +249,10 @@ if (item == null) return const Center(child: CircularProgressIndicator());
         ),
       ),
     );
+
   }
+
+
 }
 
 class _ItemHeader extends StatelessWidget {
