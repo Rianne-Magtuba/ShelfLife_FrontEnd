@@ -10,42 +10,8 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="e1327d63-42b0-4f65-9b94-2851c9546bc6" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/android/app/src/main/res/drawable/applogo.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/constants/responsive_extensions.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/libraries/Dart_Packages.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/libraries/Dart_Packages.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/android/app/src/main/AndroidManifest.xml" beforeDir="false" afterPath="$PROJECT_DIR$/android/app/src/main/AndroidManifest.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/core/business/dtos/inventory_dto.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/core/business/dtos/inventory_dto.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/core/business/dtos/user_dto.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/core/business/dtos/user_dto.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/core/business/providers/inventory_provider.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/core/business/providers/inventory_provider.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/core/business/services/analytics_service.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/core/business/services/analytics_service.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/core/business/services/auth_logicservice.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/core/business/services/auth_logicservice.dart" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/lib/core/business/services/inventory_service.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/core/business/services/inventory_service.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/core/business/services/notification_service.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/core/business/services/notification_service.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/core/common/entities/notification.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/core/common/entities/notification.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/core/common/interfaces/i_user_data_service.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/core/common/interfaces/i_user_data_service.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/core/data/services/api_client.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/core/data/services/api_client.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/core/data/services/cache_service.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/core/data/services/cache_service.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/core/data/services/inventory_data_service.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/core/data/services/inventory_data_service.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/core/data/services/user_data_service.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/core/data/services/user_data_service.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/main.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/main.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/pages/add_item_page.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/pages/add_item_page.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/pages/edit_item_page.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/pages/edit_item_page.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/pages/item_detail_page.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/pages/item_detail_page.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/pages/login_page.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/pages/login_page.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/pages/notification_settings_page.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/pages/notification_settings_page.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/pages/profile_page.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/pages/profile_page.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/pages/splash_page.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/pages/splash_page.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/pages/statistics_page.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/pages/statistics_page.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/widgets/shared_widgets.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/widgets/shared_widgets.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/linux/flutter/generated_plugin_registrant.cc" beforeDir="false" afterPath="$PROJECT_DIR$/linux/flutter/generated_plugin_registrant.cc" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/linux/flutter/generated_plugins.cmake" beforeDir="false" afterPath="$PROJECT_DIR$/linux/flutter/generated_plugins.cmake" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/macos/Flutter/GeneratedPluginRegistrant.swift" beforeDir="false" afterPath="$PROJECT_DIR$/macos/Flutter/GeneratedPluginRegistrant.swift" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pubspec.lock" beforeDir="false" afterPath="$PROJECT_DIR$/pubspec.lock" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pubspec.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/pubspec.yaml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/shelllife.iml" beforeDir="false" afterPath="$PROJECT_DIR$/shelllife.iml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/windows/flutter/generated_plugin_registrant.cc" beforeDir="false" afterPath="$PROJECT_DIR$/windows/flutter/generated_plugin_registrant.cc" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/windows/flutter/generated_plugins.cmake" beforeDir="false" afterPath="$PROJECT_DIR$/windows/flutter/generated_plugins.cmake" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -98,27 +64,27 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;Flutter.main.dart.executor&quot;: &quot;Run&quot;,
-    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.cidr.known.project.marker&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.readMode.enableVisualFormatting&quot;: &quot;true&quot;,
-    &quot;cf.first.check.clang-format&quot;: &quot;false&quot;,
-    &quot;cidr.known.project.marker&quot;: &quot;true&quot;,
-    &quot;dart.analysis.tool.window.visible&quot;: &quot;false&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
-    &quot;ignore.virus.scanning.warn.message&quot;: &quot;true&quot;,
-    &quot;io.flutter.project.isFirstOpen&quot;: &quot;true&quot;,
-    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
-    &quot;last_opened_file_path&quot;: &quot;D:/Flutter Projects/OfficialShelfLife_frntend/ShelfLife_FrontEnd/android/app/src/main/res/drawable&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.pluginManager&quot;,
-    &quot;show.migrate.to.gradle.popup&quot;: &quot;false&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "Flutter.main.dart.executor": "Run",
+    "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
+    "RunOnceActivity.cidr.known.project.marker": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "RunOnceActivity.readMode.enableVisualFormatting": "true",
+    "cf.first.check.clang-format": "false",
+    "cidr.known.project.marker": "true",
+    "dart.analysis.tool.window.visible": "false",
+    "git-widget-placeholder": "feature/major-bug-fixes-and-feature-implementation",
+    "ignore.virus.scanning.warn.message": "true",
+    "io.flutter.project.isFirstOpen": "true",
+    "kotlin-language-version-configured": "true",
+    "last_opened_file_path": "D:/Flutter Projects/OfficialShelfLife_frntend/ShelfLife_FrontEnd/android/app/src/main/res/drawable",
+    "settings.editor.selected.configurable": "preferences.pluginManager",
+    "show.migrate.to.gradle.popup": "false"
   }
-}</component>
+}]]></component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
       <recent name="D:\Flutter Projects\OfficialShelfLife_frntend\ShelfLife_FrontEnd\android\app\src\main\res\drawable" />

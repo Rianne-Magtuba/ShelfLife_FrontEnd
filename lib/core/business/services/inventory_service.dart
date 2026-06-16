@@ -152,13 +152,11 @@ Reason:
 $reason
 ''';
 
-    final uri = Uri(
-      scheme: 'mailto',
-      path: 'yourdeveloper@email.com',
-      queryParameters: {
-        'subject': 'Product Correction Request',
-        'body': body,
-      },
+    final subject = Uri.encodeComponent('Product Correction Request');
+    final encodedBody = Uri.encodeComponent(body);
+
+    final uri = Uri.parse(
+      'mailto:ianmagtuba19@gmail.com?subject=$subject&body=$encodedBody',
     );
 
     await launchUrl(
