@@ -50,19 +50,23 @@ class NotificationSettings {
   final int alertLeadDays;
   final TimeOfDay dailyReminderTime;
   final String frequency;
+  final bool persistentNotifications;
 
   NotificationSettings({
     required this.enabled, required this.alertLeadDays,
     required this.dailyReminderTime, required this.frequency,
+    this.persistentNotifications = false,
   });
 
   NotificationSettings copyWith({
     bool? enabled, int? alertLeadDays,
-    TimeOfDay? dailyReminderTime, String? frequency,
+    TimeOfDay? dailyReminderTime, String? frequency, bool? persistentNotifications,
   }) => NotificationSettings(
     enabled: enabled ?? this.enabled,
     alertLeadDays: alertLeadDays ?? this.alertLeadDays,
     dailyReminderTime: dailyReminderTime ?? this.dailyReminderTime,
-    frequency: frequency ?? this.frequency,
+    frequency: frequency ?? this.frequency,persistentNotifications:
+  persistentNotifications ??
+      this.persistentNotifications,
   );
 }

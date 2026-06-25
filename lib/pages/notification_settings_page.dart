@@ -6,6 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../constants/app_constants.dart';
 import '../core/business/providers/inventory_provider.dart';
 import '../core/business/services/inventory_service.dart';
+import '../core/business/services/notification_service.dart';
 import '../widgets/shared_widgets.dart';
 import '../core/common/entities/entities.dart';
 
@@ -71,21 +72,40 @@ class _NotificationSettingsPageState extends ConsumerState<NotificationSettingsP
                       SwitchListTile(
                         value: _settings.enabled,
                         onChanged: (v) => setState(
-                            () => _settings = _settings.copyWith(enabled: v)),
-                        title: Text('Enable Notifications',
-                            style: GoogleFonts.poppins(
-                                fontSize: 14, fontWeight: FontWeight.w500)),
-                        subtitle: Text('Receive expiry alerts and reminders',
-                            style: GoogleFonts.poppins(
-                                fontSize: 12, color: AppColors.textSecondary)),
+                                () => _settings = _settings.copyWith(enabled: v)),
+                        title: Text(
+                          'Enable Notifications',
+                          style: GoogleFonts.poppins(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        subtitle: Text(
+                          'Receive expiry alerts and reminders',
+                          style: GoogleFonts.poppins(
+                            fontSize: 12,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
                         activeThumbColor: AppColors.mediumBlue,
-                        secondary: const Icon(Icons.notifications_outlined,
-                            color: AppColors.mediumBlue),
+                        secondary: const Icon(
+                          Icons.notifications_outlined,
+                          color: AppColors.mediumBlue,
+                        ),
                       ),
+
+
+
                     ],
-                  ).animate().fadeIn(),
+                  ),
                   const SizedBox(height: 16),
-                  _SettingsSection(
+
+    AnimatedOpacity(
+    opacity: _settings.frequency == 'realtime' ? 0.4 : 1.0,
+    duration: const Duration(milliseconds: 200),
+    child: IgnorePointer(
+    ignoring: _settings.frequency == 'realtime',
+    child: _SettingsSection(
                     title: 'Alert Lead Time',
                     children: [
                       Padding(
@@ -149,8 +169,15 @@ class _NotificationSettingsPageState extends ConsumerState<NotificationSettingsP
                       ),
                     ],
                   ).animate().fadeIn(delay: 100.ms),
+    ),
+    ),
                   const SizedBox(height: 16),
-                  _SettingsSection(
+    AnimatedOpacity(
+    opacity: _settings.frequency == 'realtime' ? 0.4 : 1.0,
+    duration: const Duration(milliseconds: 200),
+    child: IgnorePointer(
+    ignoring: _settings.frequency == 'realtime',
+    child: _SettingsSection(
                     title: 'Daily Reminder',
                     children: [
                       ListTile(
@@ -177,6 +204,8 @@ class _NotificationSettingsPageState extends ConsumerState<NotificationSettingsP
                       ),
                     ],
                   ).animate().fadeIn(delay: 150.ms),
+    ),
+    ),
                   const SizedBox(height: 16),
                   _SettingsSection(
                     title: 'Notification Frequency',
@@ -214,10 +243,28 @@ class _NotificationSettingsPageState extends ConsumerState<NotificationSettingsP
                     ],
                   ).animate().fadeIn(delay: 200.ms),
                   const SizedBox(height: 28),
+                  // // TEMP DEBUG
+                  // ElevatedButton(
+                  //   onPressed: () async {
+                  //     await LocalNotificationService.debugShowImmediate();
+                  //   },
+                  //   child: const Text('DEBUG: Fire Immediate'),
+                  // ),
+                  // ElevatedButton(
+                  //   onPressed: () async {
+                  //     await LocalNotificationService.debugPending();
+                  //   },
+                  //   child: const Text('DEBUG: Check Pending'),
+                  // ),
+
                   PrimaryButton(
                     label: 'Save Settings',
                     onPressed: () async {
+                      // Ensure plugin is ready before scheduling
+                      await LocalNotificationService.initialize();
+
                       await ref.read(inventoryProvider.notifier).saveSettings(_settings);
+
                       if (context.mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(content: Text('Settings saved!')),
@@ -227,6 +274,7 @@ class _NotificationSettingsPageState extends ConsumerState<NotificationSettingsP
                     },
                   ).animate().fadeIn(delay: 250.ms),
                 ],
+
               ),
             ),
           ],

@@ -132,12 +132,26 @@ class _StatisticsPageState extends ConsumerState<StatisticsPage> {
   // ── Consumed vs wasted ratio ──
 
   Widget _buildConsumedRatioCard(AnalyticsResult data) {
-    final consumedPct = (data.consumedRatio * 100).toStringAsFixed(0);
-    final wastedPct   = ((1 - data.consumedRatio) * 100).toStringAsFixed(0);
-    final consumedFlex = (data.consumedRatio * 100).round().clamp(1, 99);
+    final hasActions =
+        data.totalConsumed + data.totalDiscarded > 0;
+
+    final consumedPct =
+    hasActions
+        ? (data.consumedRatio * 100).toStringAsFixed(0)
+        : '0';
+
+    final wastedPct =
+    hasActions
+        ? ((1 - data.consumedRatio) * 100).toStringAsFixed(0)
+        : '0';
+
+    final consumedFlex =
+    hasActions
+        ? (data.consumedRatio * 100).round().clamp(1, 99)
+        : 50;
 
     return _SectionCard(
-      title: 'Consumed vs Wasted',
+      title: 'Consumed vs Expired',
       icon: Icons.pie_chart_outline,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -150,25 +164,40 @@ class _StatisticsPageState extends ConsumerState<StatisticsPage> {
               const SizedBox(width: 16),
               _LegendDot(
                   color: AppColors.expired,
-                  label: 'Wasted: $wastedPct%'),
+                  label: 'Expired: $wastedPct%'),
             ],
           ),
           const SizedBox(height: 12),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(8),
-            child: Row(
-              children: [
-                Expanded(
-                  flex: consumedFlex,
-                  child: Container(height: 18, color: AppColors.fresh),
-                ),
-                Expanded(
-                  flex: 100 - consumedFlex,
-                  child: Container(height: 18, color: AppColors.expired),
-                ),
-              ],
+          if (hasActions)
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: Row(
+                children: [
+                  Expanded(
+                    flex: consumedFlex,
+                    child: Container(
+                      height: 18,
+                      color: AppColors.fresh,
+                    ),
+                  ),
+                  Expanded(
+                    flex: 100 - consumedFlex,
+                    child: Container(
+                      height: 18,
+                      color: AppColors.expired,
+                    ),
+                  ),
+                ],
+              ),
+            )
+          else
+            Container(
+              height: 18,
+              decoration: BoxDecoration(
+                color: AppColors.divider,
+                borderRadius: BorderRadius.circular(8),
+              ),
             ),
-          ),
           const SizedBox(height: 8),
           Text(
             'Estimated waste cost: ₱${data.estimatedWasteCost.toStringAsFixed(2)}',
@@ -297,7 +326,7 @@ class _StatisticsPageState extends ConsumerState<StatisticsPage> {
         .toDouble();
 
     return _SectionCard(
-      title: 'Expiry Timeline (Last 7 Days)',
+      title: 'Consumed Timeline (Last 7 Days)',
       icon: Icons.timeline,
       child: SizedBox(
         height: 200,
@@ -393,7 +422,7 @@ class _StatisticsPageState extends ConsumerState<StatisticsPage> {
 
     if (entries.isEmpty) {
       return _SectionCard(
-        title: 'Most Wasted Category',
+        title: 'Most Expired Category',
         icon: Icons.warning_amber_outlined,
         child: Padding(
           padding: const EdgeInsets.all(16),
@@ -404,7 +433,7 @@ class _StatisticsPageState extends ConsumerState<StatisticsPage> {
     }
 
     return _SectionCard(
-      title: 'Most Wasted Category',
+      title: 'Most Expired Category',
       icon: Icons.warning_amber_outlined,
       child: Column(
         children: entries.map((entry) {

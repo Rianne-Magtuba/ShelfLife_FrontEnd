@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -6,6 +7,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:permission_handler/permission_handler.dart';
 import '../constants/app_constants.dart';
+import '../core/business/services/inventory_service.dart';
 import '../widgets/shared_widgets.dart';
 import '../core/common/entities/entities.dart';
 import '../core/business/dtos/inventory_dto.dart';
@@ -13,6 +15,8 @@ import '../core/business/dtos/product_dto.dart';
 import '../core/business/services/product_service.dart';
 import '../core/business/providers/inventory_provider.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
+import '../constants/responsive_extensions.dart';
+
 
 
 class AddItemPage extends ConsumerStatefulWidget {
@@ -101,6 +105,206 @@ class _AddItemPageState extends ConsumerState<AddItemPage>
       ),
     );
     if (picked != null) setState(() => _purchaseDate = picked);
+  }
+
+  Future<void> _showRequestDialog() async {
+
+    if (!_isProductLocked ||
+        _barcodeCtrl.text.trim().isEmpty) {
+
+      await showDialog(
+        context: context,
+        builder: (_) => AlertDialog(
+          insetPadding: EdgeInsets.symmetric(
+            horizontal: context.w(0.06),
+            vertical: context.h(0.03),
+          ),
+          title: const Text('Request Unavailable'),
+          content: const Text(
+            'This product is not yet registered in the system.\n\n'
+                'Correction requests can only be submitted for existing registered products.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('OK'),
+            ),
+          ],
+        ),
+      );
+
+      return;
+    }
+
+    final changeCtrl = TextEditingController();
+
+    String selectedReason = 'Incorrect Product Name';
+
+    final reasons = [
+      'Incorrect Product Name',
+      'Incorrect Category',
+      'Incorrect Weight',
+      'Typographical Error',
+      'Wrong Product Information',
+      'Other',
+    ];
+    final dropdownWidth = context.w(0.65);
+    await showDialog(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+
+            return AlertDialog(
+              title: Text(
+                'Request Product Correction',
+                style: GoogleFonts.poppins(
+                  fontSize: context.sp(20),
+                ),
+              ),
+                content: SizedBox(
+                  width: context.w(0.80),
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+
+                    TextFormField(
+                      initialValue: _barcodeCtrl.text,
+                      readOnly: true,
+                      decoration: const InputDecoration(
+                        labelText: 'Barcode',
+                      ),
+                    ),
+
+                    SizedBox(height: context.h(0.015)),
+
+                    TextFormField(
+                      initialValue: _nameCtrl.text,
+                      readOnly: true,
+                      decoration: const InputDecoration(
+                        labelText: 'Product Name',
+                      ),
+                    ),
+
+                    SizedBox(height: context.h(0.015)),
+
+                    TextFormField(
+                      initialValue: '${_weightCtrl.text} $_weightUnit',
+                      readOnly: true,
+                      decoration: const InputDecoration(
+                        labelText: 'Weight',
+                      ),
+                    ),
+                    SizedBox(height: context.h(0.015)),
+
+
+
+                  DropdownMenu<String>(
+
+                  width: dropdownWidth,
+
+                  label: const Text('Reason'),
+
+                  initialSelection: selectedReason,
+
+                  inputDecorationTheme: InputDecorationTheme(
+                    filled: true,
+                    fillColor: AppColors.inputBg,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+
+                  menuStyle: MenuStyle(
+                    backgroundColor: const WidgetStatePropertyAll(
+                      Colors.white,
+                    ),
+
+                    minimumSize: WidgetStatePropertyAll(
+                      Size(dropdownWidth, 0),
+                    ),
+
+                    maximumSize: WidgetStatePropertyAll(
+                      Size(
+                        dropdownWidth,
+                        context.h(0.25),
+                      ),
+                    ),
+                  ),
+
+                  dropdownMenuEntries: reasons
+                      .map(
+                        (e) => DropdownMenuEntry(
+                      value: e,
+                      label: e,
+                    ),
+                  )
+                      .toList(),
+
+                  onSelected: (value) {
+                    if (value == null) return;
+
+                    setState(() {
+                      selectedReason = value;
+                    });
+                  },
+                ),
+
+                    SizedBox(height: context.h(0.015)),
+
+                    TextFormField(
+                      controller: changeCtrl,
+                      maxLines: 4,
+                      decoration: const InputDecoration(
+                        labelText: 'Requested Correction',
+                        hintText:
+                        'Describe what should be changed',
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+                ),
+
+              actions: [
+
+                TextButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                  },
+                  child: const Text('Cancel'),
+                ),
+
+                ElevatedButton(
+                  onPressed: () async {
+
+                    await InventoryService().sendCorrectionEmail(
+                      barcode: _barcodeCtrl.text,
+                      currentName: _nameCtrl.text,
+                      currentCategory: _category.label,
+                      currentWeight: _weightCtrl.text,
+
+                      requestedName: _nameCtrl.text,
+                      requestedCategory: _category.label,
+                      requestedWeight: _weightCtrl.text,
+
+                      reason:
+                      '$selectedReason\n\n${changeCtrl.text.trim()}',
+                    );
+
+                    if (context.mounted) {
+                      Navigator.pop(context);
+                    }
+                  },
+                  child: const Text('Submit'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
   }
 
   void _save() async {
@@ -213,10 +417,10 @@ class _AddItemPageState extends ConsumerState<AddItemPage>
             // ── Header ──────────────────────────────────────────────────────
             Container(
               padding: EdgeInsets.only(
-                top: MediaQuery.of(context).padding.top + 12,
-                left: 16,
-                right: 16,
-                bottom: 16,
+                top: MediaQuery.of(context).padding.top + context.h(0.015),
+                left: context.w(0.04),
+                right: context.w(0.04),
+                bottom: context.w(0.04),
               ),
               decoration: const BoxDecoration(
                 gradient: LinearGradient(
@@ -242,14 +446,43 @@ class _AddItemPageState extends ConsumerState<AddItemPage>
                         child: Text(
                           'Add New Item',
                           style: GoogleFonts.poppins(
-                              fontSize: 20,
+                              fontSize: context.sp(20),
                               fontWeight: FontWeight.w700,
                               color: Colors.white),
                         ),
                       ),
+                      IconButton(
+                        icon: Icon(
+                          Icons.message_rounded,
+                          color: _isProductLocked
+                              ? Colors.white
+                              : Colors.white54,
+                        ),
+                        onPressed: _isProductLocked
+                            ? _showRequestDialog
+                            : () async {
+                          await showDialog(
+                            context: context,
+                            builder: (_) => AlertDialog(
+                              title: const Text(
+                                'Request Unavailable',
+                              ),
+                              content: const Text(
+                                'Only registered products can receive correction requests.',
+                              ),
+                              actions: [
+                                TextButton(
+                                  onPressed: () => Navigator.pop(context),
+                                  child: const Text('OK'),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
                     ],
                   ),
-                  const SizedBox(height: 12),
+                   SizedBox(height: context.h(0.015)),
                   // Tab toggle
                   Container(
                     decoration: BoxDecoration(
@@ -267,8 +500,8 @@ class _AddItemPageState extends ConsumerState<AddItemPage>
                       labelColor: AppColors.darkBlue,
                       unselectedLabelColor: Colors.white,
                       labelStyle: GoogleFonts.poppins(
-                          fontSize: 13, fontWeight: FontWeight.w600),
-                      unselectedLabelStyle: GoogleFonts.poppins(fontSize: 13),
+                          fontSize: context.sp(13), fontWeight: FontWeight.w600),
+                      unselectedLabelStyle: GoogleFonts.poppins(fontSize: context.sp(13)),
                       tabs: const [
                         Tab(text: 'Manual Entry'),
                         Tab(
@@ -465,11 +698,18 @@ class _ManualFormState extends State<_ManualForm> with AutomaticKeepAliveClientM
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    return Form(
-      key: widget.formKey,
-      child: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 40),
-        children: [
+    return GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () {
+          FocusManager.instance.primaryFocus?.unfocus();
+        },
+        child: Form(
+          key: widget.formKey,
+          child: ListView(
+            keyboardDismissBehavior:
+            ScrollViewKeyboardDismissBehavior.onDrag,
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 40),
+            children: [
           // ── Basic Information ─────────────────────────────────────────────
           const _SectionLabel('Basic Information'),
 
@@ -486,8 +726,10 @@ class _ManualFormState extends State<_ManualForm> with AutomaticKeepAliveClientM
               );
               widget.onCategoryChanged(cat);
             },
+
+
           ),
-          const SizedBox(height: 12),
+              SizedBox(height: context.h(0.015)),
           // Quantity stepper
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -503,7 +745,7 @@ class _ManualFormState extends State<_ManualForm> with AutomaticKeepAliveClientM
                 const SizedBox(width: 8),
                 Text('Quantity',
                     style: GoogleFonts.poppins(
-                        fontSize: 14, color: AppColors.textSecondary)),
+                        fontSize: context.sp(14), color: AppColors.textSecondary)),
                 const Spacer(),
                 IconButton(
                   onPressed: widget.quantity > 1
@@ -521,7 +763,7 @@ class _ManualFormState extends State<_ManualForm> with AutomaticKeepAliveClientM
                     '${widget.quantity}',
                     textAlign: TextAlign.center,
                     style: GoogleFonts.poppins(
-                        fontSize: 16, fontWeight: FontWeight.w700),
+                        fontSize: context.sp(16), fontWeight: FontWeight.w700),
                   ),
                 ),
                 IconButton(
@@ -535,43 +777,95 @@ class _ManualFormState extends State<_ManualForm> with AutomaticKeepAliveClientM
               ],
             ),
           ),
-          const SizedBox(height: 12),
+              SizedBox(height: context.h(0.015)),
 
           // Weight + unit
           Row(
             children: [
-             Expanded(
+              Expanded(
                 flex: 3,
-                child: TextFormField(
-                  controller: widget.weightCtrl,
-                  readOnly: widget.isProductLocked, // Lock if found
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  decoration: InputDecoration(
-                    labelText: 'Weight (optional)',
-                    prefixIcon: const Icon(Icons.scale_outlined, size: 18),
-                    filled: true,
-                    fillColor: AppColors.inputBg,
+                child: GestureDetector(
+                  onTap: widget.isProductLocked
+                      ? () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text(
+                          'Registered product details are locked.',
+                        ),
+                      ),
+                    );
+                  }
+                      : null,
+                  child: AbsorbPointer(
+                    absorbing: widget.isProductLocked,
+                    child: TextFormField(
+                      controller: widget.weightCtrl,
+                      onTapOutside: (_) {
+                        FocusManager.instance.primaryFocus?.unfocus();
+                      },
+                      keyboardType:
+                      const TextInputType.numberWithOptions(decimal: true),
+                      inputFormatters: [
+                        FilteringTextInputFormatter.allow(
+                          RegExp(r'^\d+\.?\d{0,2}'),
+                        ),
+                      ],
+                      decoration: InputDecoration(
+                        labelText: 'Weight (optional)',
+                        prefixIcon: const Icon(
+                          Icons.scale_outlined,
+                          size: 18,
+                        ),
+                        filled: true,
+                        fillColor: AppColors.inputBg,
+                      ),
+                    ),
                   ),
                 ),
               ),
-              const SizedBox(width: 10),
+              SizedBox(width: context.w(0.026)),
               Expanded(
                 flex: 2,
-                child: DropdownButtonFormField<String>(
-                  initialValue: widget.weightUnit,
-                  decoration: const InputDecoration(labelText: 'Unit'),
-                  items: AppStrings.weightUnits
-                      .map((u) => DropdownMenuItem(
+                child: GestureDetector(
+                  onTap: widget.isProductLocked
+                      ? () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text(
+                          'Registered product details are locked.',
+                        ),
+                      ),
+                    );
+                  }
+                      : null,
+                  child: AbsorbPointer(
+                    absorbing: widget.isProductLocked,
+                    child: DropdownButtonFormField<String>(
+                      initialValue: widget.weightUnit,
+                      decoration: const InputDecoration(
+                        labelText: 'Unit',
+                      ),
+                      items: AppStrings.weightUnits
+                          .map(
+                            (u) => DropdownMenuItem(
                           value: u,
-                          child: Text(u,
-                              style: GoogleFonts.poppins(fontSize: 14))))
-                      .toList(),
-                  onChanged: widget.onWeightUnitChanged,
+                          child: Text(
+                            u,
+                            style: GoogleFonts.poppins(
+                              fontSize: context.sp(14),
+                            ),
+                          ),
+                        ),
+                      )
+                          .toList(),
+                      onChanged: widget.onWeightUnitChanged,
+                    ),
+                  ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 20),
+              SizedBox(height: context.w(0.024)),
 
           // ── Expiry Details ─────────────────────────────────────────────────
           const _SectionLabel('Expiry Details'),
@@ -603,42 +897,46 @@ class _ManualFormState extends State<_ManualForm> with AutomaticKeepAliveClientM
               date: widget.mfgDate,
               onTap: widget.onPickMfg,
             ),
-            const SizedBox(height: 12),
+            SizedBox(height: context.w(0.015)),
             TextFormField(
               controller: widget.shelfLifeCtrl,
-              keyboardType: TextInputType.number,
+              onTapOutside: (_) {
+                FocusManager.instance.primaryFocus?.unfocus();
+              },
+              keyboardType: TextInputType.number,inputFormatters: [
+              FilteringTextInputFormatter.allow(
+                  RegExp(r'^\d+\.?\d{0,2}')
+              ),
+            ],
               decoration: const InputDecoration(
                 labelText: 'Shelf Life (days)',
                 prefixIcon: Icon(Icons.calendar_today_outlined, size: 18),
               ),
             ),
           ],
-          const SizedBox(height: 20),
+              SizedBox(height: context.w(0.024)),
 
-          // ── After Opening ──────────────────────────────────────────────────
-          const _SectionLabel('After Opening (Optional)'),
-          TextFormField(
-            controller: widget.consumeWithinCtrl,
-            keyboardType: TextInputType.number,
-            decoration: const InputDecoration(
-              labelText: 'Consume within (days after opening)',
-              prefixIcon: Icon(Icons.lock_clock_outlined, size: 18),
-            ),
-          ),
-          const SizedBox(height: 20),
+
 
           // ── Finance ────────────────────────────────────────────────────────
          const _SectionLabel('Finance (Optional)'),
-          _DatePickerField(
-            label: 'Tap to select purchase date',
-            date: widget.purchaseDate,
-            onTap: widget.onPickPurchase,
-          ),
-          const SizedBox(height: 12),
+
           TextFormField(
             controller: widget.priceCtrl,
-            readOnly: widget.isProductLocked, // Lock if found
-            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            onTapOutside: (_) {
+              FocusManager.instance.primaryFocus?.unfocus();
+            },
+            //readOnly: widget.isProductLocked,
+          //  enableInteractiveSelection: !widget.isProductLocked,
+
+           // contextMenuBuilder: widget.isProductLocked
+               // ? (_, __) => const SizedBox.shrink()
+             //   : null,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),inputFormatters: [
+            FilteringTextInputFormatter.allow(
+                RegExp(r'^\d+\.?\d{0,2}')
+            ),
+          ],
             decoration: InputDecoration(
               labelText: 'Purchase Price (₱)',
               prefixIcon: const Icon(Icons.payments_outlined, size: 18),
@@ -646,11 +944,14 @@ class _ManualFormState extends State<_ManualForm> with AutomaticKeepAliveClientM
               fillColor: AppColors.inputBg,
             ),
           ),
-
+              SizedBox(height: context.w(0.024)),
           // ── Notes ──────────────────────────────────────────────────────────
           const _SectionLabel('Notes (Optional)'),
           TextFormField(
             controller: widget.notesCtrl,
+            onTapOutside: (_) {
+              FocusManager.instance.primaryFocus?.unfocus();
+            },
             maxLines: 3,
             decoration: const InputDecoration(
               hintText: 'e.g. opened, stored in back shelf...',
@@ -668,6 +969,7 @@ class _ManualFormState extends State<_ManualForm> with AutomaticKeepAliveClientM
           const SizedBox(height: 20),
         ],
       ),
+    ),
     );
   }
 }
@@ -794,20 +1096,38 @@ class _ScanTabState extends State<_ScanTab>
       ),
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setSheetState) {
-          final boxWidth = 260.0;
-          final boxHeight = 160.0;
+          final boxWidth = context.w(0.70);
+          final boxHeight = context.h(0.20);
           return SizedBox(
-            height: MediaQuery.of(ctx).size.height * 0.65,
+            height: ctx.h(0.65),
             child: Stack(
               children: [
-                MobileScanner(
-                  controller: controller,
-                  onDetect: (capture) => _onDetect(capture, setSheetState, controller),
-                  errorBuilder: (context, error) {
-                    debugPrint('[Scanner] ERROR: $error');
-                    return Center(
-                      child: Text('Camera error: $error',
-                          style: const TextStyle(color: Colors.red)),
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    final screenWidth = constraints.maxWidth;
+                    final screenHeight = constraints.maxHeight;
+
+                    final scanRect = Rect.fromCenter(
+                      center: Offset(
+                        screenWidth / 2,
+                        screenHeight / 2,
+                      ),
+                      width: boxWidth,
+                      height: boxHeight,
+                    );
+
+                    return MobileScanner(
+                      controller: controller,
+                      scanWindow: scanRect,
+                      onDetect: (capture) =>
+                          _onDetect(capture, setSheetState, controller),
+                      errorBuilder: (context, error) {
+                        debugPrint('[Scanner] ERROR: $error');
+                        return Center(
+                          child: Text('Camera error: $error',
+                              style: const TextStyle(color: Colors.red)),
+                        );
+                      },
                     );
                   },
                 ),
@@ -901,7 +1221,7 @@ class _ScanTabState extends State<_ScanTab>
 
                 // ── Instruction label ─────────────────────────────────────
                 Positioned(
-                  bottom: 140,
+                  bottom: 90,
                   left: 0,
                   right: 0,
                   child: Center(
@@ -915,7 +1235,7 @@ class _ScanTabState extends State<_ScanTab>
                       child: Text(
                         'Point camera at the product barcode',
                         style: GoogleFonts.poppins(
-                            color: Colors.white, fontSize: 13),
+                            color: Colors.white, fontSize: context.sp(13)),
                       ),
                     ),
                   ),
@@ -964,7 +1284,7 @@ class _ScanTabState extends State<_ScanTab>
                               'Barcode scanned!',
                               style: GoogleFonts.poppins(
                                 color: Colors.white,
-                                fontSize: 18,
+                                fontSize: context.sp(18),
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
@@ -972,7 +1292,7 @@ class _ScanTabState extends State<_ScanTab>
                             Text(
                               'Filling in product details...',
                               style: GoogleFonts.poppins(
-                                  color: Colors.white70, fontSize: 13),
+                                  color: Colors.white70, fontSize: context.sp(13)),
                             ),
                           ],
                         ),
@@ -1003,8 +1323,8 @@ class _ScanTabState extends State<_ScanTab>
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              width: 120,
-              height: 120,
+              width: context.w(0.30),
+              height: context.w(0.30),
               decoration: BoxDecoration(
                 color: AppColors.lightBlue.withOpacity(0.4),
                 shape: BoxShape.circle,
@@ -1015,19 +1335,19 @@ class _ScanTabState extends State<_ScanTab>
             const SizedBox(height: 24),
             Text('Scan Product Barcode',
                 style: GoogleFonts.poppins(
-                    fontSize: 18, fontWeight: FontWeight.w700)),
+                    fontSize: context.sp(18), fontWeight: FontWeight.w700)),
             const SizedBox(height: 8),
             Text(
               'Scan the barcode on the packaging to auto-fill the product name.',
               textAlign: TextAlign.center,
               style: GoogleFonts.poppins(
-                  fontSize: 13,
+                  fontSize: context.sp(13),
                   color: AppColors.textSecondary,
                   height: 1.5),
             ),
             const SizedBox(height: 32),
             SizedBox(
-              width: 220,
+              width: context.w(0.55),
               child: ElevatedButton.icon(
                 onPressed: _openScanner,
                 icon: const Icon(Icons.camera_alt, size: 18),
@@ -1048,7 +1368,7 @@ class _ScanTabState extends State<_ScanTab>
               child: Text(
                 "Can't scan? Enter manually",
                 style: GoogleFonts.poppins(
-                  fontSize: 14,
+                  fontSize: context.sp(14),
                   color: AppColors.mediumBlue,
                   fontWeight: FontWeight.w500,
                   decoration: TextDecoration.underline,
@@ -1123,7 +1443,7 @@ class _SectionLabel extends StatelessWidget {
       child: Text(
         text,
         style: GoogleFonts.poppins(
-          fontSize: 14,
+          fontSize: context.sp(14),
           fontWeight: FontWeight.w700,
           color: AppColors.darkBlue,
         ),
@@ -1160,7 +1480,7 @@ class _ModeChip extends StatelessWidget {
         child: Text(
           label,
           style: GoogleFonts.poppins(
-            fontSize: 12,
+            fontSize: context.sp(12),
             fontWeight: FontWeight.w600,
             color: selected ? Colors.white : AppColors.textPrimary,
           ),
@@ -1201,7 +1521,7 @@ class _DatePickerField extends StatelessWidget {
               child: Text(
                 date != null ? DateFormat('MMMM d, yyyy').format(date!) : label,
                 style: GoogleFonts.poppins(
-                  fontSize: 14,
+                  fontSize: context.sp(14),
                   color: date != null
                       ? AppColors.textPrimary
                       : AppColors.textSecondary,

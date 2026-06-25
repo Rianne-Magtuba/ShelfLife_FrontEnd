@@ -43,16 +43,44 @@ class UserDataService implements IUserDataService {
 
     debugPrint('[UserDataService] Register ${response.statusCode}');
 
-    if (response.statusCode == 200 || response.statusCode == 201) return;
-    if (response.statusCode == 409) {
-      throw Exception(ApiClient.parseError(response, 'An account with this email already exists.'));
-    } else if (response.statusCode == 400) {
-      throw Exception(ApiClient.parseError(response, 'Please check your details and try again.'));
+    switch (response.statusCode) {
+      case 200:
+      case 201:
+        return;
+
+      case 409:
+        final error = ApiClient.parseError(
+          response,
+          'Email or username already exists.',
+        );
+
+        if (error.toLowerCase().contains('email')) {
+          throw Exception('An account with this email already exists.');
+        }
+
+        if (error.toLowerCase().contains('username')) {
+          throw Exception('This username is already taken.');
+        }
+
+        throw Exception(error);
+
+      case 400:
+        throw Exception(
+          ApiClient.parseError(
+            response,
+            'Please check your details and try again.',
+          ),
+        );
+
+      default:
+        throw Exception(
+          ApiClient.parseError(
+            response,
+            'Registration failed. Please try again.',
+          ),
+        );
     }
-
-    throw Exception(ApiClient.parseError(response, 'Registration failed. Please try again.'));
   }
-
   @override
   Future<void> logout() async => ApiClient.clearAll();
 
@@ -82,5 +110,58 @@ class UserDataService implements IUserDataService {
       ApiClient.parseError(response, 'Could not send reset email. Please try again.'),
     );
   }
+
+  @override
+  Future<void> updateProfile(
+      UpdateProfileRequest request,
+      ) async {
+
+    final response = await ApiClient.put(
+      '/api/auth/profile',
+      request.toJson(),
+    );
+
+    if (response.statusCode == 200) {
+
+      await _storage.write(
+        key: 'username',
+        value: request.username,
+      );
+
+      await _storage.write(
+        key: 'email',
+        value: request.email,
+      );
+
+      return;
+    }
+
+    throw Exception(
+      ApiClient.parseError(
+        response,
+        'Unable to update profile.',
+      ),
+    );
+  }
+
+  @override
+  Future<void> changePassword(ChangePasswordRequest request) async {
+    final response = await ApiClient.post(
+      '/api/auth/change-password',
+      request.toJson(),
+    );
+
+    if (response.statusCode == 200) return;
+
+    if (response.statusCode == 401) {
+      throw Exception('Current password is incorrect.');
+    }
+
+    throw Exception(
+      ApiClient.parseError(response, 'Unable to change password.'),
+    );
+  }
+
+
 
 }

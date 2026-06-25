@@ -24,4 +24,16 @@ class AuthService implements IUserDataService {
     // TODO: implement sendPasswordReset
     throw UnimplementedError();
   }
+
+  @override
+  Future<void> updateProfile(
+      UpdateProfileRequest request,
+      ) =>
+      _data.updateProfile(request);
+
+  @override
+  Future<void> changePassword(
+      ChangePasswordRequest request,
+      ) =>
+      _data.changePassword(request);
 }

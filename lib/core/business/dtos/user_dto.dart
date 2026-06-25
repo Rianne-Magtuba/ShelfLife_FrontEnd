@@ -78,3 +78,33 @@ class ResetPasswordRequest {
 
   Map<String, dynamic> toJson() => {'Email': email};
 }
+
+class UpdateProfileRequest {
+  final String username;
+  final String email;
+
+  UpdateProfileRequest({
+    required this.username,
+    required this.email,
+  });
+
+  Map<String, dynamic> toJson() => {
+    'Username': username,
+    'Email': email,
+  };
+}
+
+class ChangePasswordRequest {
+  final String currentPassword;
+  final String newPassword;
+
+  ChangePasswordRequest({
+    required this.currentPassword,
+    required this.newPassword,
+  });
+
+  Map<String, dynamic> toJson() => {
+    'CurrentPassword': currentPassword,
+    'NewPassword': newPassword,
+  };
+}

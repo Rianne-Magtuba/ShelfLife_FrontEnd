@@ -27,6 +27,10 @@ class _SplashPageState extends State<SplashPage> {
 
   @override
   Widget build(BuildContext context) {
+    final size = MediaQuery.of(context).size;
+    final screenHeight = size.height;
+    final screenWidth = size.width;
+
     return Scaffold(
       body: Container(
         decoration: const BoxDecoration(
@@ -47,7 +51,7 @@ class _SplashPageState extends State<SplashPage> {
               child: Opacity(
                 opacity: 0.50,
                 child: SizedBox(
-                  height: 300,
+                  height: screenHeight * 0.35,
                   width: double.infinity,
                   child: SvgPicture.asset(
                     'assets/svg/splashbg.svg',
@@ -59,7 +63,7 @@ class _SplashPageState extends State<SplashPage> {
             SafeArea(
               child: Column(
                 children: [
-                  const SizedBox(height: 32),
+                  SizedBox(height: screenHeight * 0.03),
 
                   // ── Logo ──────────────────────────────────────────────────────
                   Padding(
@@ -68,14 +72,14 @@ class _SplashPageState extends State<SplashPage> {
                       children: [
                         SvgPicture.asset(
                           'assets/svg/letterlogo.svg',
-                          width: 72,
-                          height: 72,
+                          width: screenWidth * 0.18,
+                          height: screenWidth * 0.18,
                           fit: BoxFit.contain,
                         )
                             .animate()
                             .fadeIn(duration: 600.ms)
                             .scale(begin: const Offset(0.7, 0.7)),
-                        const SizedBox(height: 12),
+                        SizedBox(height: screenHeight * 0.012),
                         Text(
                           AppStrings.tagline,
                           textAlign: TextAlign.center,
@@ -88,10 +92,11 @@ class _SplashPageState extends State<SplashPage> {
                     ),
                   ),
 
-                  const SizedBox(height: 32),
+                  SizedBox(height: screenHeight * 0.03),
 
                   // ── Carousel — driven by AppStrings.splashSlides ─────────────
                   Expanded(
+                    flex: 5,
                     child: PageView.builder(
                       controller: _controller,
                       onPageChanged: (i) => setState(() => _currentPage = i),
@@ -114,7 +119,7 @@ class _SplashPageState extends State<SplashPage> {
                     ),
                   ),
 
-                  const SizedBox(height: 32),
+                  SizedBox(height: screenHeight * 0.03),
 
                   // ── CTA buttons ───────────────────────────────────────────────
                   Padding(
@@ -126,7 +131,7 @@ class _SplashPageState extends State<SplashPage> {
                           icon: Icons.arrow_forward_rounded,
                           onPressed: () => context.go(AppRoutes.register),
                         ).animate().fadeIn(delay: 400.ms).slideY(begin: 0.3),
-                        const SizedBox(height: 12),
+                        SizedBox(height: screenHeight * 0.012),
                         SecondaryButton(
                           label: 'Log In',
                           onPressed: () => context.go(AppRoutes.login),
@@ -135,7 +140,7 @@ class _SplashPageState extends State<SplashPage> {
                     ),
                   ),
 
-                  const SizedBox(height: 32),
+                  SizedBox(height: screenHeight * 0.03),
                 ],
               ),
             ),
@@ -157,6 +162,9 @@ class _SlideCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final vectorPath = data['vector'] ?? '';
+    final size = MediaQuery.of(context).size;
+    final screenHeight = MediaQuery.of(context).size.height;
+    final screenWidth = MediaQuery.of(context).size.width;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 32),
@@ -165,8 +173,8 @@ class _SlideCard extends StatelessWidget {
         children: [
           // SVG illustration
           SizedBox(
-            width: 220,
-            height: 220,
+            width: screenHeight * 0.28,
+            height: screenHeight * 0.28,
             child: vectorPath.isNotEmpty
                 ? vectorPath.endsWith('.png')
                     ? Image.asset(vectorPath, fit: BoxFit.contain)
@@ -187,13 +195,13 @@ class _SlideCard extends StatelessWidget {
           Text(
             data['title'] ?? '',
             style: GoogleFonts.poppins(
-              fontSize: 26,
+              fontSize: screenWidth * 0.065,
               fontWeight: FontWeight.w700,
               color: AppColors.darkBlue,
             ),
           ),
 
-          const SizedBox(height: 12),
+          SizedBox(height: screenHeight * 0.012),
 
           Text(
             data['subtitle'] ?? '',

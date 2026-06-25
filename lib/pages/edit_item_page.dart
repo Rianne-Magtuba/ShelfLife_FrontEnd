@@ -6,9 +6,12 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:shelllife/core/business/dtos/inventory_dto.dart';
 import '../constants/app_constants.dart';
+import '../core/business/services/inventory_service.dart';
 import '../widgets/shared_widgets.dart';
 import '../core/common/entities/entities.dart';
 import '../core/business/providers/inventory_provider.dart';
+import '../constants/responsive_extensions.dart';
+
 
 class EditItemPage extends ConsumerStatefulWidget {
   final String itemId;
@@ -57,6 +60,7 @@ class _EditItemPageState extends ConsumerState<EditItemPage> {
     _selectedWeightUnit = _item.weightUnit ?? AppStrings.weightUnits.first;
     _expiryDate = _item.expiryDate;
     _purchaseDate = _item.purchaseDate;
+
   }
 
   @override
@@ -100,6 +104,198 @@ class _EditItemPageState extends ConsumerState<EditItemPage> {
       ),
     );
     if (picked != null) setState(() => _purchaseDate = picked);
+  }
+
+  Future<void> _showRequestDialog() async {
+    final reasonCtrl = TextEditingController();
+
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        String selectedReason = 'Incorrect Product Name';
+
+        final reasons = [
+          'Incorrect Product Name',
+          'Incorrect Category',
+          'Incorrect Weight',
+          'Typographical Error',
+          'Wrong Product Information',
+          'Other',
+        ];
+
+        final dropdownWidth = context.w(0.73);
+
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              insetPadding: EdgeInsets.symmetric(
+                horizontal: context.w(0.06),
+                vertical: context.h(0.01),
+              ),
+
+              title: Text(
+                'Request Product Correction',
+                style: GoogleFonts.poppins(
+                  fontSize: context.sp(20),
+                ),
+              ),
+
+              content: SizedBox(
+                width: context.w(0.80),
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+
+                      TextFormField(
+                        initialValue: 'Inventory ID: ${_item.id}',
+                        readOnly: true,
+                        decoration: const InputDecoration(
+                          labelText: 'Inventory ID',
+                        ),
+                      ),
+
+                      SizedBox(height: context.h(0.015)),
+
+                      TextFormField(
+                        initialValue: _item.name,
+                        readOnly: true,
+                        decoration: const InputDecoration(
+                          labelText: 'Current Name',
+                        ),
+                      ),
+
+                      SizedBox(height: context.h(0.015)),
+
+                      TextFormField(
+                        initialValue: _item.category.label,
+                        readOnly: true,
+                        decoration: const InputDecoration(
+                          labelText: 'Current Category',
+                        ),
+                      ),
+
+                      SizedBox(height: context.h(0.015)),
+
+                      TextFormField(
+                        initialValue:
+                        '${_item.weight ?? ''} ${_item.weightUnit ?? ''}',
+                        readOnly: true,
+                        decoration: const InputDecoration(
+                          labelText: 'Current Weight',
+                        ),
+                      ),
+
+                      SizedBox(height: context.h(0.015)),
+
+                      DropdownMenu<String>(
+                        width: dropdownWidth,
+
+                        label: const Text('Reason'),
+
+                        initialSelection: selectedReason,
+
+                        inputDecorationTheme: InputDecorationTheme(
+                          filled: true,
+                          fillColor: AppColors.inputBg,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+
+                        menuStyle: MenuStyle(
+                          backgroundColor:
+                          const WidgetStatePropertyAll(Colors.white),
+
+                          minimumSize: WidgetStatePropertyAll(
+                            Size(dropdownWidth, 0),
+                          ),
+
+                          maximumSize: WidgetStatePropertyAll(
+                            Size(
+                              dropdownWidth,
+                              context.h(0.25),
+                            ),
+                          ),
+                        ),
+
+                        dropdownMenuEntries: reasons
+                            .map(
+                              (e) => DropdownMenuEntry(
+                            value: e,
+                            label: e,
+                          ),
+                        )
+                            .toList(),
+
+                        onSelected: (value) {
+                          if (value == null) return;
+
+                          setState(() {
+                            selectedReason = value;
+                          });
+                        },
+                      ),
+
+                      SizedBox(height: context.h(0.015)),
+
+                      TextFormField(
+                        controller: reasonCtrl,
+                        maxLines: 4,
+                        decoration: const InputDecoration(
+                          labelText: 'Requested Correction',
+                          hintText:
+                          'Describe what should be changed',
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              actions: [
+                TextButton(
+                  onPressed: () =>
+                      Navigator.pop(context, false),
+                  child: const Text('Cancel'),
+                ),
+
+                ElevatedButton(
+                  onPressed: () =>
+                      Navigator.pop(context, true),
+                  child: const Text('Submit'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+
+    if (result != true) return;
+
+    await InventoryService().sendCorrectionEmail(
+      barcode: 'Inventory ID: ${_item.id}',
+      currentName: _item.name,
+      currentCategory: _item.category.label,
+      currentWeight: _item.weight ?? '',
+
+      requestedName: _nameCtrl.text.trim(),
+      requestedCategory: _selectedCategory.label,
+      requestedWeight: _weightCtrl.text.trim(),
+
+      reason: reasonCtrl.text.trim(),
+    );
+
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text(
+          'Correction request email prepared.',
+        ),
+      ),
+    );
   }
 
   Future<void> _save() async {
@@ -153,40 +349,10 @@ class _EditItemPageState extends ConsumerState<EditItemPage> {
       setState(() => _isSaving = false);
     }
   }
+
+
 }
 
-  /*Future<void> _save() async {
-    if (!_formKey.currentState!.validate()) return;
-    setState(() => _isSaving = true);
-
-    // Build updated FoodItem via copyWith — all types match the model exactly.
-    // ignore: unused_local_variable
-    final updated = _item.copyWith(
-      name: _nameCtrl.text.trim(),
-      category: _selectedCategory,
-      quantity: int.parse(_quantityCtrl.text.trim()),
-      weight: _weightCtrl.text.trim().isEmpty ? null : _weightCtrl.text.trim(),
-      weightUnit: _selectedWeightUnit,
-      expiryDate: _expiryDate,
-      purchaseDate: _purchaseDate,
-      purchasePrice: _priceCtrl.text.trim().isEmpty
-          ? null
-          : double.tryParse(_priceCtrl.text.trim()),
-      consumeWithinDays: _consumeWithinCtrl.text.trim().isEmpty
-          ? null
-          : int.tryParse(_consumeWithinCtrl.text.trim()),
-      notes: _notesCtrl.text.trim().isEmpty ? null : _notesCtrl.text.trim(),
-    );
-
-    // TODO: pass `updated` to a repository / Riverpod provider
-    await Future.delayed(const Duration(milliseconds: 600));
-    if (!mounted) return;
-    setState(() => _isSaving = false);
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Item updated successfully!')),
-    );
-    context.pop();
-  }*/
 
   @override
   Widget build(BuildContext context) {
@@ -194,7 +360,10 @@ class _EditItemPageState extends ConsumerState<EditItemPage> {
       body: AppBackground(
         child: Column(
           children: [
-            _EditHeader(item: _item),
+            _EditHeader(
+              item: _item,
+              onRequestCorrection: _showRequestDialog,
+            ),
             Expanded(
               child: Form(
                 key: _formKey,
@@ -340,14 +509,6 @@ class _EditItemPageState extends ConsumerState<EditItemPage> {
                       _SectionCard(
                         title: 'Finance',
                         children: [
-                          _DateTile(
-                            label: 'Purchase Date',
-                            date: _purchaseDate,
-                            onTap: _pickPurchaseDate,
-                            icon: Icons.calendar_today_outlined,
-                            optional: true,
-                          ),
-                          const SizedBox(height: 12),
                           _field(
                             controller: _priceCtrl,
                             label: 'Purchase Price (₱)',
@@ -362,6 +523,8 @@ class _EditItemPageState extends ConsumerState<EditItemPage> {
                               return null;
                             },
                           ),
+                          const SizedBox(height: 12),
+
                         ],
                       ).animate().fadeIn(delay: 160.ms),
 
@@ -458,8 +621,14 @@ class _EditItemPageState extends ConsumerState<EditItemPage> {
 // ── Widgets ───────────────────────────────────────────────────────────────────
 
 class _EditHeader extends StatelessWidget {
+  final VoidCallback onRequestCorrection;
+
+  const _EditHeader({
+    required this.item,
+    required this.onRequestCorrection,
+  });
+
   final FoodItem item;
-  const _EditHeader({required this.item});
 
   @override
   Widget build(BuildContext context) {
@@ -494,6 +663,13 @@ class _EditHeader extends StatelessWidget {
                         fontSize: 20,
                         fontWeight: FontWeight.w700,
                         color: Colors.white)),
+              ),
+              IconButton(
+                icon: const Icon(
+                  Icons.message_rounded,
+                  color: Colors.white,
+                ),
+                onPressed: onRequestCorrection,
               ),
             ],
           ),

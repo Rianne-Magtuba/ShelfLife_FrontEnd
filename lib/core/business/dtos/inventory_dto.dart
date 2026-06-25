@@ -27,6 +27,7 @@ class AddInventoryItemRequest {
   });
 
   Map<String, dynamic> toJson() => {
+
     'IsCustomItem':    isCustomItem,
     if (barcodeRef        != null) 'BarcodeRef':       barcodeRef,
     if (customName        != null) 'CustomName':       customName,
@@ -36,8 +37,12 @@ class AddInventoryItemRequest {
     'Quantity':        quantity,
     'Quality':         quality,
     'Notes':           notes,
-    'ExpirationDate': expirationDate.toUtc().toIso8601String().replaceAll(RegExp(r'\.\d{3}'), ''),
+    'ExpirationDate': expirationDate.toIso8601String(),
+
+
   };
+
+
 }
 
 class InventoryItemResponse {
@@ -133,3 +138,5 @@ class InventoryItemResponse {
     }
   }
 }
+
+

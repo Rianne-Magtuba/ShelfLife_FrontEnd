@@ -3,9 +3,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../constants/app_constants.dart';
+import '../core/business/dtos/user_dto.dart';
+import '../core/business/providers/inventory_provider.dart';
+import '../core/business/services/auth_logicservice.dart';
+import '../core/data/services/cache_service.dart';
 import '../widgets/shared_widgets.dart';
 import '../app/router.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import '../constants/responsive_extensions.dart';
 
 // ─── Providers ────────────────────────────────────────────────────────────────
 
@@ -103,7 +108,40 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                           context,
                           label: 'Username',
                           initialValue: _username,
-                          onSaved: (v) => setState(() => _username = v),
+                          onSaved: (v) async {
+                            try {
+
+                              await AuthService().updateProfile(
+                                UpdateProfileRequest(
+                                  username: v,
+                                  email: _email,
+                                ),
+                              );
+
+                              await _loadUserData();
+
+                              if (mounted) {
+                                ScaffoldMessenger.of(context)
+                                    .showSnackBar(
+                                  const SnackBar(
+                                    content: Text(
+                                      'Profile updated successfully',
+                                    ),
+                                  ),
+                                );
+                              }
+
+                            } catch (e) {
+                              if (mounted) {
+                                ScaffoldMessenger.of(context)
+                                    .showSnackBar(
+                                  SnackBar(
+                                    content: Text('$e'),
+                                  ),
+                                );
+                              }
+                            }
+                          },
                         ),
                       ),
                       const Divider(indent: 48, height: 1),
@@ -116,7 +154,31 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                           label: 'Email',
                           initialValue: _email,
                           keyboardType: TextInputType.emailAddress,
-                          onSaved: (v) => setState(() => _email = v),
+                          onSaved: (v) async {          // ← make it async
+                            try {
+                              await AuthService().updateProfile(
+                                UpdateProfileRequest(
+                                  username: _username,  // keep current username
+                                  email: v,             // new email
+                                ),
+                              );
+                              await _loadUserData();    // refresh from secure storage
+                              if (mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text('Email updated successfully')),
+                                );
+                              }
+                            } catch (e) {
+                              if (mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(e.toString().replaceAll('Exception: ', '')),
+                                    backgroundColor: Colors.redAccent,
+                                  ),
+                                );
+                              }
+                            }
+                          },
                         ),
                       ),
                       const Divider(indent: 48, height: 1),
@@ -138,7 +200,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                       ),
                     ]),
 
-                    const SizedBox(height: 20),
+                  SizedBox(height: context.h(0.024)),
 
                     // ── Features ──
                     _buildSectionLabel('Features'),
@@ -159,69 +221,52 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                       ),
                     ]),
 
-                    const SizedBox(height: 20),
+                    SizedBox(height: context.h(0.024)),
 
                     // ── App Preferences ──
-                    _buildSectionLabel('App Preferences'),
-                    _buildCard([
+                    // _buildSectionLabel('App Preferences'),
+                    // _buildCard([
+                    //
+                    //
+                    //   ListTile(
+                    //     leading: const Icon(Icons.alarm_outlined,
+                    //         color: AppColors.mediumBlue, size: 22),
+                    //     title: Text('Default Alert Days',
+                    //         style: GoogleFonts.poppins(
+                    //             fontSize: 14, fontWeight: FontWeight.w500)),
+                    //     subtitle: Text('Notify me this many days before expiry',
+                    //         style: GoogleFonts.poppins(
+                    //             fontSize: 12, color: AppColors.textSecondary)),
+                    //     trailing: Row(
+                     //     mainAxisSize: MainAxisSize.min,
+                      //    children: [
+                       //     Text('$alertDays days',
+                         //       style: GoogleFonts.poppins(
+                         //           fontSize: 13,
+                             //       color: AppColors.textSecondary)),
+                         //   const Icon(Icons.chevron_right,
+                          //      color: AppColors.textSecondary),
+                        //  ],
+                    //    ),
+                    //    onTap: () => _showAlertDaysPicker(context),
+                    //    contentPadding: const EdgeInsets.symmetric(
+                     //       horizontal: 4, vertical: 2),
+                   //   ),
+                  //  ]),
 
-                      ListTile(
-                        leading: const Icon(Icons.category_outlined,
-                            color: AppColors.mediumBlue, size: 22),
-                        title: Text('Default Category',
-                            style: GoogleFonts.poppins(
-                                fontSize: 14, fontWeight: FontWeight.w500)),
-                        trailing: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(defaultCategory,
-                                style: GoogleFonts.poppins(
-                                    fontSize: 13,
-                                    color: AppColors.textSecondary)),
-                            const Icon(Icons.chevron_right,
-                                color: AppColors.textSecondary),
-                          ],
-                        ),
-                        onTap: () => _showCategoryPicker(context),
-                        contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 4, vertical: 2),
-                      ),
-                      const Divider(indent: 48, height: 1),
-                      ListTile(
-                        leading: const Icon(Icons.alarm_outlined,
-                            color: AppColors.mediumBlue, size: 22),
-                        title: Text('Default Alert Days',
-                            style: GoogleFonts.poppins(
-                                fontSize: 14, fontWeight: FontWeight.w500)),
-                        subtitle: Text('Notify me this many days before expiry',
-                            style: GoogleFonts.poppins(
-                                fontSize: 12, color: AppColors.textSecondary)),
-                        trailing: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text('$alertDays days',
-                                style: GoogleFonts.poppins(
-                                    fontSize: 13,
-                                    color: AppColors.textSecondary)),
-                            const Icon(Icons.chevron_right,
-                                color: AppColors.textSecondary),
-                          ],
-                        ),
-                        onTap: () => _showAlertDaysPicker(context),
-                        contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 4, vertical: 2),
-                      ),
-                    ]),
+
 
                     const SizedBox(height: 20),
 
                     SizedBox(
                       width: double.infinity,
                       child: OutlinedButton.icon(
-                        onPressed: () async {
-                          await _storage.deleteAll();
-                          if (mounted) context.go(AppRoutes.login);
-                        },
+                          onPressed: () async {
+                            await CacheService.clearAllData();    // ← full wipe
+                            await _storage.deleteAll();
+                            ref.invalidate(inventoryProvider);
+                            if (mounted) context.go(AppRoutes.login);
+                          },
                         icon: const Icon(Icons.logout, size: 18),
                         label: Text('Log Out',
                             style: GoogleFonts.poppins(
@@ -384,9 +429,10 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     required String label,
     required String initialValue,
     TextInputType keyboardType = TextInputType.text,
-    required ValueChanged<String> onSaved,
+        required Future<void> Function(String) onSaved,
   }) {
     final ctrl = TextEditingController(text: initialValue);
+    final formKey = GlobalKey<FormState>();
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -404,17 +450,46 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                   style: GoogleFonts.poppins(
                       fontSize: 18, fontWeight: FontWeight.w700)),
               const SizedBox(height: 16),
-              TextFormField(
-                controller: ctrl,
-                keyboardType: keyboardType,
-                decoration: InputDecoration(labelText: label),
+              Form(
+                key: formKey,
+                child: TextFormField(
+                  controller: ctrl,
+                  keyboardType: keyboardType,
+                  decoration: InputDecoration(
+                    labelText: label,
+                  ),
+                  validator: (value) {
+                    final text = value?.trim() ?? '';
+
+                    if (text.isEmpty) {
+                      return '$label is required';
+                    }
+
+                    if (label == 'Username' && text.length < 3) {
+                      return 'Username must be at least 3 characters';
+                    }
+                    if (label == 'Email') {
+
+                      final emailRegex = RegExp(
+                        r'^[^@]+@[^@]+\.[^@]+$',
+                      );
+
+                      if (!emailRegex.hasMatch(text)) {
+                        return 'Enter a valid email address';
+                      }
+                    }
+                    return null;
+
+                  },
+                ),
               ),
               const SizedBox(height: 20),
               PrimaryButton(
                 label: 'Save',
-                onPressed: () {
-                  onSaved(ctrl.text.trim());
-                  Navigator.pop(ctx);
+                onPressed: () async {                    // ← async
+                  if (!formKey.currentState!.validate()) return;
+                  Navigator.pop(ctx);                    // ← pop first, dismiss keyboard
+                  await onSaved(ctrl.text.trim());       // ← then await the backend call
                 },
               ),
             ],
@@ -436,10 +511,11 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
       shape: const RoundedRectangleBorder(
           borderRadius:
               BorderRadius.vertical(top: Radius.circular(AppSizes.radiusXL))),
-      builder: (ctx) => SafeArea(
-        child: Padding(
-          padding: EdgeInsets.fromLTRB(
-              24, 24, 24, MediaQuery.of(ctx).viewInsets.bottom + 24),
+      builder: (ctx) =>  Padding(
+        padding: EdgeInsets.fromLTRB(
+            24, 24, 24, MediaQuery.of(ctx).viewInsets.bottom + 24),
+          child: SingleChildScrollView(
+            child: SafeArea(
           child: Form(
             key: formKey,
             child: Column(
@@ -449,7 +525,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                 Text('Change Password',
                     style: GoogleFonts.poppins(
                         fontSize: 18, fontWeight: FontWeight.w700)),
-                const SizedBox(height: 16),
+                SizedBox(height: context.h(0.019)),
                 TextFormField(
                   controller: currentCtrl,
                   obscureText: true,
@@ -457,34 +533,74 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                       const InputDecoration(labelText: 'Current Password'),
                   validator: (v) => v == null || v.isEmpty ? 'Required' : null,
                 ),
-                const SizedBox(height: 12),
+                SizedBox(height: context.h(0.014)),
                 TextFormField(
                   controller: newCtrl,
                   obscureText: true,
                   decoration: const InputDecoration(labelText: 'New Password'),
-                  validator: (v) => v != null && v.length < 6
-                      ? 'At least 6 characters'
-                      : null,
+                  validator: (v) {
+
+                    final value = v?.trim() ?? '';
+
+                    if (value.isEmpty) {
+                      return 'Required';
+                    }
+
+                    if (value.length < 6) {
+                      return 'Password must be at least 6 characters';
+                    }
+
+                    return null;
+                  },
                 ),
-                const SizedBox(height: 12),
+                SizedBox(height: context.h(0.014)),
                 TextFormField(
                   controller: confirmCtrl,
                   obscureText: true,
                   decoration:
                       const InputDecoration(labelText: 'Confirm New Password'),
-                  validator: (v) =>
-                      v != newCtrl.text ? 'Passwords do not match' : null,
+                  validator: (v) {
+
+                    if (v == null || v.isEmpty) {
+                      return 'Confirm your password';
+                    }
+
+                    if (v != newCtrl.text) {
+                      return 'Passwords do not match';
+                    }
+
+                    return null;
+                  },
                 ),
-                const SizedBox(height: 20),
+                SizedBox(height: context.h(0.024)),
                 PrimaryButton(
                   label: 'Update Password',
-                  onPressed: () {
+                  onPressed: () async {
+                    FocusScope.of(ctx).unfocus();
                     if (formKey.currentState!.validate()) {
-                      Navigator.pop(ctx);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                            content: Text('Password updated successfully')),
-                      );
+                      try {
+                        await AuthService().changePassword(
+                          ChangePasswordRequest(
+                            currentPassword: currentCtrl.text.trim(),
+                            newPassword: newCtrl.text.trim(),
+                          ),
+                        );
+                        if (ctx.mounted) {
+                          Navigator.pop(ctx);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Password changed successfully')),
+                          );
+                        }
+                      } catch (e) {
+                        if (ctx.mounted) {
+                          ScaffoldMessenger.of(ctx).showSnackBar(
+                            SnackBar(
+                              content: Text(e.toString().replaceAll('Exception: ', '')),
+                              backgroundColor: Colors.redAccent,
+                            ),
+                          );
+                        }
+                      }
                     }
                   },
                 ),
@@ -493,42 +609,10 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
           ),
         ),
       ),
-    );
-  }
-
-  void _showCategoryPicker(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-          borderRadius:
-              BorderRadius.vertical(top: Radius.circular(AppSizes.radiusXL))),
-      builder: (ctx) => Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(AppSizes.paddingM),
-            child: Text('Default Category',
-                style: GoogleFonts.poppins(
-                    fontSize: 18, fontWeight: FontWeight.w700)),
-          ),
-          ...AppStrings.categoriesNoAll.map((cat) {
-            final isSelected = ref.read(defaultCategoryProvider) == cat;
-            return ListTile(
-              title: Text(cat, style: GoogleFonts.poppins(fontSize: 14)),
-              trailing: isSelected
-                  ? const Icon(Icons.check, color: AppColors.mediumBlue)
-                  : null,
-              onTap: () {
-                ref.read(defaultCategoryProvider.notifier).state = cat;
-                Navigator.pop(ctx);
-              },
-            );
-          }),
-          const SizedBox(height: 16),
-        ],
       ),
     );
   }
+
 
   void _showAlertDaysPicker(BuildContext context) {
     showModalBottomSheet(

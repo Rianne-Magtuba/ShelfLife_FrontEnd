@@ -9,17 +9,24 @@ import '../services/notification_service.dart';
 
 class InventoryNotifier extends AsyncNotifier<List<FoodItem>> {
   final _service = InventoryService();
+  final Set<String> _processingItems = {};
 
   @override
   Future<List<FoodItem>> build() async {
     final cached = _service.loadCached();
     if (cached.isNotEmpty) state = AsyncValue.data(cached);
-    return _service.fetchInventory();
+
+    final items = await _service.fetchInventory(); // wait for real data
+    state = AsyncValue.data(items);               // set state first
+    await _updatePersistentNotification();         // then notify based on real data
+
+    return items;
   }
 
   Future<void> refresh() async {
     state = const AsyncValue.loading();
     state = await AsyncValue.guard(() => _service.fetchInventory());
+    await _updatePersistentNotification();
   }
 
   Future<bool> addItem(AddInventoryItemRequest request) async {
@@ -27,6 +34,23 @@ class InventoryNotifier extends AsyncNotifier<List<FoodItem>> {
       final newItem = await _service.createItem(request);
       final current = state.value ?? [];
       state = AsyncValue.data([newItem, ...current]);
+
+      await _updatePersistentNotification();
+
+      // ← Schedule notification for the newly added item
+      final settings = _service.getNotificationSettings();
+      if (settings.enabled) {
+        await LocalNotificationService.scheduleExpiryNotification(
+          newItem,
+          daysBeforeExpiry: settings.alertLeadDays,
+          reminderHour:     settings.dailyReminderTime.hour,
+          reminderMinute:   settings.dailyReminderTime.minute,
+          frequency:        settings.frequency,
+        );
+        debugPrint('[InventoryNotifier] Scheduled notification for ${newItem.name}');
+      }
+
+
       return true;
     } catch (e) {
       debugPrint('[InventoryNotifier] addItem error: $e');
@@ -40,7 +64,27 @@ class InventoryNotifier extends AsyncNotifier<List<FoodItem>> {
       ) async {
     try {
       final success = await _service.updateItem(inventoryId, request);
-      if (success) await refresh();
+      if (success) {
+        await refresh();
+        await _updatePersistentNotification();
+        // ← Reschedule for the updated item with new expiry date
+        final settings = _service.getNotificationSettings();
+        if (settings.enabled) {
+          final updated = state.value?.firstWhere(
+                (i) => i.id == inventoryId,
+            orElse: () => throw Exception('Item not found'),
+          );
+          if (updated != null) {
+            await LocalNotificationService.scheduleExpiryNotification(
+              updated,
+              daysBeforeExpiry: settings.alertLeadDays,
+              reminderHour:     settings.dailyReminderTime.hour,
+              reminderMinute:   settings.dailyReminderTime.minute,
+              frequency:        settings.frequency,
+            );
+          }
+        }
+      }
       return success;
     } catch (e) {
       debugPrint('[InventoryNotifier] updateItem error: $e');
@@ -50,14 +94,30 @@ class InventoryNotifier extends AsyncNotifier<List<FoodItem>> {
 
   Future<bool> discardItem(String inventoryId) async {
     try {
+      final current = state.value ?? [];
+
+      final item = current.firstWhere(
+            (i) => i.id == inventoryId,
+      );
+
       final success = await _service.deleteItem(inventoryId);
+
       if (success) {
-        await _service.recordDiscarded();
-        final current = state.value ?? [];
+
+        if (item.status == ItemStatus.expired) {
+          await _service.recordDiscarded();
+
+          await CacheService.incrementDiscardedCategory(
+            item.category,
+          );
+        }
+
         state = AsyncValue.data(
           current.where((i) => i.id != inventoryId).toList(),
         );
+        await _updatePersistentNotification();
       }
+
       return success;
     } catch (e) {
       debugPrint('[InventoryNotifier] discardItem error: $e');
@@ -70,10 +130,18 @@ class InventoryNotifier extends AsyncNotifier<List<FoodItem>> {
       final success = await _service.consumeItem(inventoryId); // ← was deleteItem
       if (success) {
         await _service.recordConsumed();
+        await CacheService.incrementConsumedDay();
         final current = state.value ?? [];
+        final item = current.firstWhere(
+              (i) => i.id == inventoryId,
+        );
+        await CacheService.incrementConsumedCategory(
+          item.category,
+        );
         state = AsyncValue.data(
           current.where((i) => i.id != inventoryId).toList(),
         );
+        await _updatePersistentNotification();
       }
       return success;
     } catch (e) {
@@ -84,8 +152,15 @@ class InventoryNotifier extends AsyncNotifier<List<FoodItem>> {
 
   Future<void> saveSettings(NotificationSettings settings) async {
     await _service.saveNotificationSettings(settings);
-    final items = state.value ?? [];
-    debugPrint('[Settings] Saving — enabled: ${settings.enabled}, leadDays: ${settings.alertLeadDays}');
+
+    final items = state.value?.isNotEmpty == true
+        ? state.value!
+        : await _service.fetchInventory();
+
+    debugPrint('[Settings] Saving — enabled: ${settings.enabled}, '
+        'leadDays: ${settings.alertLeadDays}, '
+        'frequency: ${settings.frequency}');
+
     if (settings.enabled) {
       debugPrint('[Settings] Scheduling for ${items.length} items');
       await LocalNotificationService.scheduleAllFromInventory(
@@ -93,12 +168,39 @@ class InventoryNotifier extends AsyncNotifier<List<FoodItem>> {
         daysBeforeExpiry: settings.alertLeadDays,
         reminderHour: settings.dailyReminderTime.hour,
         reminderMinute: settings.dailyReminderTime.minute,
+        frequency: settings.frequency,
       );
+      await LocalNotificationService.debugAlarmPermission();
+      await LocalNotificationService.debugPending();
+      await _updatePersistentNotification();
     } else {
       await LocalNotificationService.cancelAll();
+      await LocalNotificationService.cancelPersistentNotification();
     }
   }
+
+  Future<void> _updatePersistentNotification() async {
+    final settings = _service.getNotificationSettings();
+    if (!settings.enabled) {
+      await LocalNotificationService.cancelPersistentNotification();
+      return;
+    }
+
+    final items = state.value ?? [];
+    final expiringSoon = items.where((i) => i.status == ItemStatus.expiringSoon).length;
+    final expired = items.where((i) => i.status == ItemStatus.expired).length;
+
+    await LocalNotificationService.showPersistentNotification(
+      totalItems: items.length,
+      expiringSoon: expiringSoon,
+      expired: expired,
+    );
+  }
 }
+
+
+
+
 
 // ── Providers ───────────────────────────────────────────────────────────────
 
@@ -139,11 +241,22 @@ final notificationsProvider = Provider<List<AppNotification>>((ref) {
 });
 
 final analyticsProvider = Provider<AnalyticsResult>((ref) {
-  final items   = ref.watch(inventoryProvider).value ?? [];
+  final items = ref.watch(inventoryProvider).value ?? [];
   final service = InventoryService();
+
+  debugPrint(
+      'Consumed: ${service.getConsumedCount()} | '
+          'Discarded: ${service.getDiscardedCount()}');
+
   return AnalyticsService.compute(
     items,
-    consumedCount:  service.getConsumedCount(),
+    consumedCount: service.getConsumedCount(),
     discardedCount: service.getDiscardedCount(),
+
+    consumedTimeline:
+    CacheService.loadConsumedTimeline(),
+
+    wastedByCategory:
+    CacheService.loadDiscardedCategories(),
   );
 });

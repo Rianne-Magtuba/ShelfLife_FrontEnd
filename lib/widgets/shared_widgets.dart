@@ -348,30 +348,67 @@ class SectionHeader extends StatelessWidget {
 
 // ─── Delete Confirmation Modal ────────────────────────────────────────────────
 
-Future<bool?> showDeleteConfirmation(BuildContext context, String itemName) {
+Future<bool?> showDeleteConfirmation(BuildContext context,String itemName,[bool? isExpired]) {
+  final expired = isExpired ?? false;
+
   return showDialog<bool>(
     context: context,
     builder: (ctx) => AlertDialog(
       shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppSizes.radiusXL)),
-      title: Text('Delete Item',
-          style: GoogleFonts.poppins(fontWeight: FontWeight.w700)),
-      content: Text(
-        'Are you sure you want to delete "$itemName"? This action cannot be undone.',
-        style:
-            GoogleFonts.poppins(fontSize: 14, color: AppColors.textSecondary),
+        borderRadius: BorderRadius.circular(
+          AppSizes.radiusXL,
+        ),
       ),
+
+      title: Text(
+        expired
+            ? 'Discard Expired Item'
+            : 'Delete Item',
+        style: GoogleFonts.poppins(
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+
+      content: Text(
+        expired
+            ? 'Are you sure you want to discard "$itemName"? This item will be recorded as food waste and included in analytics.'
+            : 'Are you sure you want to delete "$itemName"? This action cannot be undone.',
+        style: GoogleFonts.poppins(
+          fontSize: 14,
+          color: AppColors.textSecondary,
+        ),
+      ),
+
       actions: [
         TextButton(
-          onPressed: () => Navigator.pop(ctx, false),
-          child: Text('Cancel',
-              style: GoogleFonts.poppins(color: AppColors.textSecondary)),
+          onPressed: () => Navigator.pop(
+            ctx,
+            false,
+          ),
+          child: Text(
+            'Cancel',
+            style: GoogleFonts.poppins(
+              color: AppColors.textSecondary,
+            ),
+          ),
         ),
+
         ElevatedButton(
-          onPressed: () => Navigator.pop(ctx, true),
-          style: ElevatedButton.styleFrom(backgroundColor: AppColors.expired),
-          child:
-              Text('Delete', style: GoogleFonts.poppins(color: Colors.white)),
+          onPressed: () => Navigator.pop(
+            ctx,
+            true,
+          ),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppColors.expired,
+          ),
+          child: Text(
+            expired
+                ? 'Discard'
+                : 'Delete',
+            style: GoogleFonts.poppins(
+              color: Colors.white,
+            ),
+          ),
         ),
       ],
     ),
@@ -671,7 +708,21 @@ class ProductBasicFields extends StatelessWidget {
       children: [
         TextFormField(
           controller: nameCtrl,
-          readOnly: isLocked, // Lock field
+          onTapOutside: (_) {
+            FocusManager.instance.primaryFocus?.unfocus();
+          },
+          readOnly: isLocked,
+          onTap: isLocked
+              ? () {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text(
+                  'Registered product information cannot be edited.',
+                ),
+              ),
+            );
+          }
+              : null,// Lock field
           textCapitalization: TextCapitalization.words,
           decoration: InputDecoration(
             labelText: nameLabelOverride ?? 'Product Name',
@@ -687,7 +738,21 @@ class ProductBasicFields extends StatelessWidget {
         const SizedBox(height: 12),
         TextFormField(
           controller: barcodeCtrl,
-          readOnly: true, 
+          onTapOutside: (_) {
+            FocusManager.instance.primaryFocus?.unfocus();
+          },
+          readOnly: isLocked,
+          onTap: isLocked
+              ? () {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text(
+                  'Registered product information cannot be edited.',
+                ),
+              ),
+            );
+          }
+              : null,
           decoration: const InputDecoration(
             labelText: 'Barcode (optional)',
             prefixIcon: Icon(Icons.qr_code, size: 18),
@@ -697,6 +762,7 @@ class ProductBasicFields extends StatelessWidget {
         const SizedBox(height: 12),
         DropdownButtonFormField<String>(
           value: selectedCategory,
+
           decoration: InputDecoration(
             labelText: 'Category',
             filled: true,

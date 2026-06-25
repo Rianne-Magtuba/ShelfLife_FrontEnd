@@ -35,13 +35,18 @@ class AnalyticsService {
       List<FoodItem> activeItems, {
         required int consumedCount,
         required int discardedCount,
+        required Map<String, int> wastedByCategory,
+        required List<MapEntry<String, int>> consumedTimeline,
       }) {
     // ── Totals ──────────────────────────────────────────────────────────────
     final expired = activeItems
         .where((i) => i.status == ItemStatus.expired)
         .toList();
 
-    final total = activeItems.length + consumedCount + discardedCount;
+    final total =
+        activeItems.length +
+            consumedCount +
+            discardedCount;
 
     // ── Waste cost — sum purchase prices of expired active items ────────────
     final wasteCost = expired.fold<double>(
@@ -62,28 +67,28 @@ class AnalyticsService {
         .map((k, v) => MapEntry(k, v.length));
 
     // ── Wasted by category — expired active items grouped by category ────────
-    final wastedByCategory = expired
-        .groupListsBy((i) => i.category.label)
-        .map((k, v) => MapEntry(k, v.length));
+   // final wastedByCategory = expired
+      //  .groupListsBy((i) => i.category.label)
+       // .map((k, v) => MapEntry(k, v.length));
 
     // ── Expiry timeline — items expiring on each of the last 7 days ─────────
-    final now = DateTime.now();
+ //   final now = DateTime.now();
     // Build an ordered map: oldest day first, today last
-    final dayKeys = List.generate(7, (i) {
-      final d = now.subtract(Duration(days: 6 - i));
-      return _dayKey(d);
-    });
-    final dayMap = {for (final k in dayKeys) k: 0};
+   // final dayKeys = List.generate(7, (i) {
+     // final d = now.subtract(Duration(days: 6 - i));
+     // return _dayKey(d);
+ //   });
+   // final dayMap = {for (final k in dayKeys) k: 0};
 
-    for (final item in activeItems) {
-      final key = _dayKey(item.expiryDate);
-      if (dayMap.containsKey(key)) {
-        dayMap[key] = dayMap[key]! + 1;
-      }
-    }
+  //  for (final item in activeItems) {
+    //  final key = _dayKey(item.expiryDate);
+    //  if (dayMap.containsKey(key)) {
+     //   dayMap[key] = dayMap[key]! + 1;
+     // }
+  //  }
 
     // Convert to list of entries preserving insertion order
-    final expiryByDay = dayMap.entries.toList();
+ //   final expiryByDay = dayMap.entries.toList();
 
     return AnalyticsResult(
       totalAdded:         total,
@@ -93,8 +98,8 @@ class AnalyticsService {
       estimatedWasteCost: wasteCost,
       consumedRatio:      consumedRatio,
       categoryBreakdown:  categoryBreakdown,
-      wastedByCategory:   wastedByCategory,
-      expiryByDay:        expiryByDay,
+      wastedByCategory: wastedByCategory,
+      expiryByDay: consumedTimeline,
     );
   }
 
