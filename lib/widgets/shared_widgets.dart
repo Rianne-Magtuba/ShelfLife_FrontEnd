@@ -57,12 +57,12 @@ class AppHeader extends StatelessWidget {
         ),
       ),
       padding:
-          EdgeInsets.only(top: topPad + 12, bottom: bottom != null ? 0 : 20),
+          EdgeInsets.only(top: topPad + 20, bottom: bottom != null ? 0 : 24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: AppSizes.paddingM),
+            padding: const EdgeInsets.symmetric(horizontal: AppSizes.paddingL),
             child: Row(
               children: [
                 Expanded(

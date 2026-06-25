@@ -45,3 +45,27 @@ class ProductRequest {
     if (price       != null) 'Price':       price,
   };
 }
+
+class ProductUpdateRequest {
+  final String barcode;
+  final String proposedName;
+  final String proposedCategory;
+  final double proposedWeightGrams;
+  final double proposedPrice;
+
+  ProductUpdateRequest({
+    required this.barcode,
+    required this.proposedName,
+    required this.proposedCategory,
+    required this.proposedWeightGrams,
+    required this.proposedPrice,
+  });
+
+  Map<String, dynamic> toJson() => {
+    'barcode':              barcode,
+    'proposedName':         proposedName,
+    'proposedCategory':     proposedCategory,
+    'proposedWeightGrams':  proposedWeightGrams,
+    'proposedPrice':        proposedPrice,
+  };
+}

@@ -5,7 +5,7 @@ import 'package:hive_flutter/hive_flutter.dart';
 import '../../common/entities/entities.dart';
 
 class CacheService {
-  static const _inventoryBoxName = 'inventory_v1';
+  static const _inventoryBoxName = 'inventory_v2'; // was v1
   static bool _initialized = false;
 
 
@@ -79,6 +79,7 @@ class CacheService {
     'purchaseDate':     item.purchaseDate?.toIso8601String(),
     'notes':            item.notes,
     'consumeWithinDays': item.consumeWithinDays,
+    'barcodeRef': item.barcodeRef,
   };
 
   static FoodItem _fromMap(Map<String, dynamic> map) => FoodItem(
@@ -98,6 +99,7 @@ class CacheService {
         ? DateTime.parse(map['purchaseDate'] as String) : null,
     notes:            map['notes']            as String?,
     consumeWithinDays: map['consumeWithinDays'] as int?,
+    barcodeRef: map['barcodeRef'] as String?,
   );
 
 
@@ -365,6 +367,9 @@ class CacheService {
     await box.clear(); // wipes everything including meta keys
     debugPrint('[Cache] Full cache cleared');
   }
+
+
+
 
 
 }

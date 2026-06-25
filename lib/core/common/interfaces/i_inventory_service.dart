@@ -21,7 +21,4 @@ abstract class IInventoryDataService {
   Future<void> incrementDiscarded();
   Future<bool> consumeItem(String inventoryId);
 
-  // ── Notification settings ───────────────────────────────────────────────
-  NotificationSettings loadNotificationSettings();
-  Future<void>         saveNotificationSettings(NotificationSettings settings);
 }

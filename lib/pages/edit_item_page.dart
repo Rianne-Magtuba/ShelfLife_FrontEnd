@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -7,10 +9,12 @@ import 'package:intl/intl.dart';
 import 'package:shelllife/core/business/dtos/inventory_dto.dart';
 import '../constants/app_constants.dart';
 import '../core/business/services/inventory_service.dart';
+import '../core/data/services/api_client.dart';
 import '../widgets/shared_widgets.dart';
 import '../core/common/entities/entities.dart';
 import '../core/business/providers/inventory_provider.dart';
 import '../constants/responsive_extensions.dart';
+
 
 
 class EditItemPage extends ConsumerStatefulWidget {
@@ -23,6 +27,7 @@ class EditItemPage extends ConsumerStatefulWidget {
 
 class _EditItemPageState extends ConsumerState<EditItemPage> {
   late FoodItem _item;
+  String? _barcodeRef;
   final _formKey = GlobalKey<FormState>();
 
   late TextEditingController _nameCtrl;
@@ -38,13 +43,15 @@ class _EditItemPageState extends ConsumerState<EditItemPage> {
   DateTime? _purchaseDate;
   bool _isSaving = false;
 
+
+
   @override
   void initState() {
     super.initState();
     final inventory = ref.read(inventoryProvider).value ?? [];
     _item = inventory.firstWhere(
           (i) => i.id == widget.itemId,
-      orElse: () => inventory.first, // fallback prevents null
+      orElse: () => inventory.first,
     );
 
     _nameCtrl = TextEditingController(text: _item.name);
@@ -61,7 +68,25 @@ class _EditItemPageState extends ConsumerState<EditItemPage> {
     _expiryDate = _item.expiryDate;
     _purchaseDate = _item.purchaseDate;
 
+    _barcodeRef = _item.barcodeRef; // seed with whatever the cache has
+    _fetchBarcode();                // then try to get the real value
   }
+
+  Future<void> _fetchBarcode() async {
+    try {
+      final response = await ApiClient.get('/api/inventory/${_item.id}');
+      if (response.statusCode == 200) {
+        final json = jsonDecode(response.body) as Map<String, dynamic>;
+        final barcode = json['barcodeRef'] as String? ?? json['BarcodeRef'] as String?;
+        if (mounted && barcode != null && barcode.isNotEmpty) {
+          setState(() => _item = _item.copyWith(barcodeRef: barcode));
+        }
+      }
+    } catch (e) {
+      debugPrint('[EditItem] Failed to fetch barcode: $e');
+    }
+  }
+
 
   @override
   void dispose() {
@@ -90,23 +115,25 @@ class _EditItemPageState extends ConsumerState<EditItemPage> {
     if (picked != null) setState(() => _expiryDate = picked);
   }
 
-  Future<void> _pickPurchaseDate() async {
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: _purchaseDate ?? DateTime.now(),
-      firstDate: DateTime(2000),
-      lastDate: DateTime.now(),
-      builder: (ctx, child) => Theme(
-        data: Theme.of(ctx).copyWith(
-          colorScheme: const ColorScheme.light(primary: AppColors.mediumBlue),
-        ),
-        child: child!,
-      ),
-    );
-    if (picked != null) setState(() => _purchaseDate = picked);
-  }
 
   Future<void> _showRequestDialog() async {
+
+    debugPrint('[EditItem] _item.id = ${_item.id}');
+    debugPrint('[EditItem] _item.barcodeRef (from provider) = ${_item.barcodeRef}');
+    debugPrint('[EditItem] _barcodeRef (from fetch) = $_barcodeRef');   // ← new
+
+
+    if (_barcodeRef == null || _barcodeRef!.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Correction requests can only be submitted for barcode-registered products.'),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+      return;
+    }
+
+
     final reasonCtrl = TextEditingController();
 
     final result = await showDialog<bool>(
@@ -274,26 +301,19 @@ class _EditItemPageState extends ConsumerState<EditItemPage> {
 
     if (result != true) return;
 
-    await InventoryService().sendCorrectionEmail(
-      barcode: 'Inventory ID: ${_item.id}',
-      currentName: _item.name,
-      currentCategory: _item.category.label,
-      currentWeight: _item.weight ?? '',
-
-      requestedName: _nameCtrl.text.trim(),
-      requestedCategory: _selectedCategory.label,
-      requestedWeight: _weightCtrl.text.trim(),
-
-      reason: reasonCtrl.text.trim(),
+    await InventoryService().sendCorrectionRequest(
+      barcode: _barcodeRef ?? '',  // edit page uses inventory ID as reference
+      proposedName:        _nameCtrl.text.trim(),
+      proposedCategory:    _selectedCategory.label,
+      proposedWeightGrams: _weightCtrl.text.trim(),
+      proposedPrice:       _priceCtrl.text.trim(),
     );
 
     if (!mounted) return;
 
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
-        content: Text(
-          'Correction request email prepared.',
-        ),
+        content: Text('Correction request submitted successfully!'),
       ),
     );
   }
@@ -664,34 +684,19 @@ class _EditHeader extends StatelessWidget {
                         fontWeight: FontWeight.w700,
                         color: Colors.white)),
               ),
-              IconButton(
-                icon: const Icon(
-                  Icons.message_rounded,
-                  color: Colors.white,
-                ),
-                onPressed: onRequestCorrection,
-              ),
+              // IconButton(
+              //   icon: const Icon(
+              //     Icons.message_rounded,
+              //     color: Colors.white,
+              //   ),
+              //   onPressed: onRequestCorrection,
+              // ),
             ],
           ),
           const SizedBox(height: 12),
           Row(
             children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: Image.asset(
-                  item.imagePath ?? 'assets/images/placeholder.png',
-                  width: 72,
-                  height: 72,
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => Container(
-                    width: 72,
-                    height: 72,
-                    color: Colors.white24,
-                    child:
-                        Icon(item.category.icon, size: 36, color: Colors.white),
-                  ),
-                ),
-              ),
+
               const SizedBox(width: 16),
               Expanded(
                 child: Column(

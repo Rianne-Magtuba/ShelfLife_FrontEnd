@@ -127,6 +127,7 @@ class InventoryItemResponse {
     dateAdded:    dateRegistered,
     purchasePrice: displayPrice > 0 ? displayPrice : null,
     notes:        notes.isNotEmpty ? notes : null,
+    barcodeRef: barcodeRef?.isEmpty == true ? null : barcodeRef,
   );
 
   static ItemCategory _parseCategory(String c) {

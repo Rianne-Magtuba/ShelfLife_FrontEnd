@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import '../../common/entities/notification.dart';
 import '../../common/interfaces/i_user_data_service.dart';
 import '../../business/dtos/user_dto.dart';
 import 'api_client.dart';
@@ -162,6 +164,48 @@ class UserDataService implements IUserDataService {
     );
   }
 
+  // ── Notification settings ───────────────────────────────────────────────
 
+  @override
+  Future<NotificationSettings> getNotificationSettings() async {
+    final response = await ApiClient.get('/api/auth/notification-settings');
 
+    if (response.statusCode == 200) {
+      final json = jsonDecode(response.body) as Map<String, dynamic>;
+      final data = NotificationSettingsResponse.fromJson(json);
+      return NotificationSettings(
+        enabled:           data.enabled,
+        frequency:         data.frequency == 'realtime' ? 'daily' : data.frequency,
+        alertLeadDays:     data.alertLeadDays,
+        dailyReminderTime: TimeOfDay(
+          hour:   data.reminderHour,
+          minute: data.reminderMinute,
+        ),
+      );
+    }
+
+    throw Exception(
+      ApiClient.parseError(response, 'Failed to load notification settings.'),
+    );
+  }
+
+  @override
+  Future<void> saveNotificationSettings(NotificationSettings settings) async {
+    final response = await ApiClient.put(
+      '/api/auth/notification-settings',
+      NotificationSettingsRequest(
+        enabled:        settings.enabled,
+        frequency:      settings.frequency,
+        alertLeadDays:  settings.alertLeadDays,
+        reminderHour:   settings.dailyReminderTime.hour,
+        reminderMinute: settings.dailyReminderTime.minute,
+      ).toJson(),
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception(
+        ApiClient.parseError(response, 'Failed to save notification settings.'),
+      );
+    }
+  }
 }

@@ -39,15 +39,15 @@ void main() async {
     appRouter.go(AppRoutes.login);        // redirect to login
   };
 
-  await LocalNotificationService.debugPending();
-  await Future.delayed(
-    const Duration(seconds: 10),
-  );
+  //await LocalNotificationService.debugPending();
+  // await Future.delayed(
+  //   const Duration(seconds: 10),
+  // );
+  //
+  // debugPrint('AFTER 10 SECONDS');
 
-  debugPrint('AFTER 10 SECONDS');
-
-  await LocalNotificationService.debugPending();
-  await LocalNotificationService.debugShowImmediate();
+  // await LocalNotificationService.debugPending();
+  // await LocalNotificationService.debugShowImmediate();
 
   runApp(const ProviderScope(child: ShelfLifeApp()));
 }

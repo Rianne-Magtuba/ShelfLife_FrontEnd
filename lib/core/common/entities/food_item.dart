@@ -66,11 +66,11 @@ class FoodItem {
   final String? weightUnit;
   final DateTime expiryDate;
   final DateTime dateAdded;
-  final String? imagePath;
   final String? notes;
   final double? purchasePrice;
   final DateTime? purchaseDate;
   final int? consumeWithinDays;
+  final String? barcodeRef;
 
   FoodItem({
     required this.id,
@@ -81,11 +81,11 @@ class FoodItem {
     this.weightUnit,
     required this.expiryDate,
     required this.dateAdded,
-    this.imagePath,
     this.notes,
     this.purchasePrice,
     this.purchaseDate,
     this.consumeWithinDays,
+    this.barcodeRef,
   });
 
   ItemStatus get status {
@@ -101,15 +101,14 @@ class FoodItem {
     String? id, String? name, ItemCategory? category, int? quantity,
     String? weight, String? weightUnit, DateTime? expiryDate,
     DateTime? dateAdded, String? imagePath, String? notes,
-    double? purchasePrice, DateTime? purchaseDate, int? consumeWithinDays,
+    double? purchasePrice, DateTime? purchaseDate, int? consumeWithinDays,  String? barcodeRef,
   }) => FoodItem(
     id: id ?? this.id, name: name ?? this.name,
     category: category ?? this.category, quantity: quantity ?? this.quantity,
     weight: weight ?? this.weight, weightUnit: weightUnit ?? this.weightUnit,
     expiryDate: expiryDate ?? this.expiryDate, dateAdded: dateAdded ?? this.dateAdded,
-    imagePath: imagePath ?? this.imagePath, notes: notes ?? this.notes,
     purchasePrice: purchasePrice ?? this.purchasePrice,
     purchaseDate: purchaseDate ?? this.purchaseDate,
-    consumeWithinDays: consumeWithinDays ?? this.consumeWithinDays,
+    consumeWithinDays: consumeWithinDays ?? this.consumeWithinDays,  barcodeRef: barcodeRef ?? this.barcodeRef,
   );
 }

@@ -108,3 +108,42 @@ class ChangePasswordRequest {
     'NewPassword': newPassword,
   };
 }
+
+class NotificationSettingsRequest {
+  final bool enabled;
+  final String frequency;
+  final int alertLeadDays;
+  final int reminderHour;
+  final int reminderMinute;
+
+  NotificationSettingsRequest({
+    required this.enabled,
+    required this.frequency,
+    required this.alertLeadDays,
+    required this.reminderHour,
+    required this.reminderMinute,
+  });
+
+  Map<String, dynamic> toJson() => {
+    'enabled':       enabled,
+    'frequency':     frequency,
+    'alertLeadDays': alertLeadDays,
+    'reminderHour':  reminderHour,
+    'reminderMinute': reminderMinute,
+  };
+}
+
+class NotificationSettingsResponse {
+  final bool enabled;
+  final String frequency;
+  final int alertLeadDays;
+  final int reminderHour;
+  final int reminderMinute;
+
+  NotificationSettingsResponse.fromJson(Map<String, dynamic> json)
+      : enabled        = json['enabled']        as bool,
+        frequency      = json['frequency']      as String,
+        alertLeadDays  = json['alertLeadDays']  as int,
+        reminderHour   = json['reminderHour']   as int,
+        reminderMinute = json['reminderMinute'] as int;
+}
