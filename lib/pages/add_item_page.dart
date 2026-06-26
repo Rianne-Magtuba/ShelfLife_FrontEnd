@@ -138,6 +138,8 @@ class _AddItemPageState extends ConsumerState<AddItemPage>
     }
 
     final changeCtrl = TextEditingController();
+    final proposedNameCtrl = TextEditingController(text: _nameCtrl.text);
+    final proposedWeightCtrl = TextEditingController(text: _weightCtrl.text);
 
     String selectedReason = 'Incorrect Product Name';
 
@@ -181,20 +183,20 @@ class _AddItemPageState extends ConsumerState<AddItemPage>
                     SizedBox(height: context.h(0.015)),
 
                     TextFormField(
-                      initialValue: _nameCtrl.text,
-                      readOnly: true,
+                      controller: proposedNameCtrl,
+                      textCapitalization: TextCapitalization.words,
                       decoration: const InputDecoration(
-                        labelText: 'Product Name',
+                        labelText: 'Proposed Name',
                       ),
                     ),
 
                     SizedBox(height: context.h(0.015)),
 
                     TextFormField(
-                      initialValue: '${_weightCtrl.text} $_weightUnit',
-                      readOnly: true,
-                      decoration: const InputDecoration(
-                        labelText: 'Weight',
+                      controller: proposedWeightCtrl,
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      decoration: InputDecoration(
+                        labelText: 'Proposed Weight ($_weightUnit)',
                       ),
                     ),
                     SizedBox(height: context.h(0.015)),
@@ -282,10 +284,9 @@ class _AddItemPageState extends ConsumerState<AddItemPage>
                     try {
                       await InventoryService().sendCorrectionRequest(
                         barcode:             _barcodeCtrl.text,
-                        proposedName:        _nameCtrl.text,
+                        proposedName:        proposedNameCtrl.text.trim(),
                         proposedCategory:    _category.label,
-                          proposedWeightGrams: WeightConverter.toGrams(  _weightCtrl.text, _weightUnit)?.toStringAsFixed(2) ?? _weightCtrl.text,
-                       // proposedWeightGrams: _weightCtrl.text,
+                        proposedWeightGrams: WeightConverter.toGrams(proposedWeightCtrl.text.trim(), _weightUnit)?.toStringAsFixed(2) ?? proposedWeightCtrl.text.trim(),
                         proposedPrice:       _priceCtrl.text,
                       );
 
