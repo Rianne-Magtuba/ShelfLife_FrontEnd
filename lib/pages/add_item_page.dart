@@ -151,7 +151,7 @@ class _AddItemPageState extends ConsumerState<AddItemPage>
       'Wrong Product Information',
       'Other',
     ];
-    final dropdownWidth = context.w(0.65);
+    final dropdownWidth = context.w(0.73);
     await showDialog(
       context: context,
       builder: (context) {
@@ -455,8 +455,8 @@ class _AddItemPageState extends ConsumerState<AddItemPage>
             Container(
               padding: EdgeInsets.only(
                 top: MediaQuery.of(context).padding.top + context.h(0.015),
-                left: context.w(0.04),
-                right: context.w(0.04),
+                left: context.w(0.05),
+                right: context.w(0.05),
                 bottom: context.w(0.04),
               ),
               decoration: const BoxDecoration(
@@ -848,7 +848,7 @@ class _ManualFormState extends State<_ManualForm> with AutomaticKeepAliveClientM
                         ),
                       ],
                         decoration: InputDecoration(
-    labelText: 'Weight (optional)',
+    labelText: 'Weight',
     prefixIcon: const Icon(
       Icons.scale_outlined,
       size: 18,
@@ -903,7 +903,7 @@ class _ManualFormState extends State<_ManualForm> with AutomaticKeepAliveClientM
               ),
             ],
           ),
-              SizedBox(height: context.w(0.024)),
+              SizedBox(height: context.w(0.060)),
 
           // ── Expiry Details ─────────────────────────────────────────────────
           const _SectionLabel('Expiry Details'),
@@ -952,7 +952,7 @@ class _ManualFormState extends State<_ManualForm> with AutomaticKeepAliveClientM
               ),
             ),
           ],
-              SizedBox(height: context.w(0.024)),
+              SizedBox(height: context.w(0.060)),
 
 
 
@@ -982,7 +982,7 @@ class _ManualFormState extends State<_ManualForm> with AutomaticKeepAliveClientM
               fillColor: AppColors.inputBg,
             ),
           ),
-              SizedBox(height: context.w(0.024)),
+              SizedBox(height: context.w(0.060)),
           // ── Notes ──────────────────────────────────────────────────────────
           const _SectionLabel('Notes (Optional)'),
           TextFormField(

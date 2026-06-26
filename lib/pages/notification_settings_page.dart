@@ -331,7 +331,7 @@ class _SettingsSection extends StatelessWidget {
             borderRadius: BorderRadius.circular(AppSizes.radiusL),
             boxShadow: [
               BoxShadow(
-                  color: AppColors.mediumBlue.withOpacity(0.05), blurRadius: 8)
+                  color: AppColors.mediumBlue.withOpacity(0.3), blurRadius: 8)
             ],
           ),
           child: Column(children: children),

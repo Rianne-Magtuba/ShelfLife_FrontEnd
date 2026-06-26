@@ -457,7 +457,7 @@ class _Card extends StatelessWidget {
         borderRadius: BorderRadius.circular(AppSizes.radiusL),
         boxShadow: [
           BoxShadow(
-            color: AppColors.mediumBlue.withOpacity(0.07),
+            color: AppColors.mediumBlue.withOpacity(0.30),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
