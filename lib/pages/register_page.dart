@@ -188,6 +188,7 @@ class _RegisterPageState extends State<RegisterPage> {
                       const SizedBox(height: 32),
                       TextFormField(
                         controller: _usernameCtrl,
+                        enabled: !_loading,
                         decoration: const InputDecoration(
                             labelText: 'Username',
                             prefixIcon: Icon(Icons.person_outline, size: 20)),
@@ -198,6 +199,7 @@ class _RegisterPageState extends State<RegisterPage> {
                       TextFormField(
                         controller: _emailCtrl,
                         keyboardType: TextInputType.emailAddress,
+                        enabled: !_loading,
                         decoration: const InputDecoration(
                             labelText: 'Email address',
                             prefixIcon: Icon(Icons.mail_outline, size: 20)),
@@ -212,6 +214,7 @@ class _RegisterPageState extends State<RegisterPage> {
                         controller: _passCtrl,
                         obscureText: _obscurePass,
                         onChanged: _calcStrength,
+                        enabled: !_loading,
                         decoration: InputDecoration(
                           labelText: 'Password',
                           prefixIcon: const Icon(Icons.lock_outline, size: 20),
@@ -261,6 +264,7 @@ class _RegisterPageState extends State<RegisterPage> {
                       TextFormField(
                         controller: _confirmCtrl,
                         obscureText: _obscureConfirm,
+                        enabled: !_loading,
                         decoration: InputDecoration(
                           labelText: 'Confirm password',
                           prefixIcon: const Icon(Icons.lock_outline, size: 20),
@@ -288,11 +292,11 @@ class _RegisterPageState extends State<RegisterPage> {
                         children: [
                           Checkbox(
                             value: _agreeTerms,
-                            onChanged: (v) =>
-                                setState(() => _agreeTerms = v ?? false),
+                            onChanged: _loading  // ← change this
+                                ? null
+                                : (v) => setState(() => _agreeTerms = v ?? false),
                             activeColor: AppColors.mediumBlue,
-                            shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(4)),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
                           ),
                           Expanded(
                             child: Padding(

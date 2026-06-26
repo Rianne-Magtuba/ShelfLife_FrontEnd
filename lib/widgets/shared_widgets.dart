@@ -15,11 +15,12 @@ class AppBackground extends StatelessWidget {
     return Container(
       constraints: const BoxConstraints.expand(),
       decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          colors: [AppColors.gradientStart, AppColors.gradientEnd],
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-        ),
+        color: AppColors.gradientStart,
+        // gradient: LinearGradient(
+        //   colors: [AppColors.gradientStart, AppColors.gradientEnd],
+        //   begin: Alignment.topCenter,
+        //   end: Alignment.bottomCenter,
+        // ),
       ),
       child: child,
     );

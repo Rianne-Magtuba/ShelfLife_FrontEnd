@@ -28,6 +28,7 @@ class EditItemPage extends ConsumerStatefulWidget {
 class _EditItemPageState extends ConsumerState<EditItemPage> {
   late FoodItem _item;
   String? _barcodeRef;
+  bool get _isProductLocked => _barcodeRef != null && _barcodeRef!.isNotEmpty;
   final _formKey = GlobalKey<FormState>();
 
   late TextEditingController _nameCtrl;
@@ -407,13 +408,23 @@ class _EditItemPageState extends ConsumerState<EditItemPage> {
                       _SectionCard(
                         title: 'Basic Info',
                         children: [
-                          _field(
-                            controller: _nameCtrl,
-                            label: 'Name',
-                            icon: Icons.label_outline,
-                            validator: (v) => v == null || v.trim().isEmpty
-                                ? 'Name is required'
+                          GestureDetector(
+                            onTap: _isProductLocked
+                                ? () => ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Registered product information cannot be edited.')),
+                            )
                                 : null,
+                            child: AbsorbPointer(
+                              absorbing: _isProductLocked,
+                              child: _field(
+                                controller: _nameCtrl,
+                                label: 'Name',
+                                icon: Icons.label_outline,
+                                validator: (v) => v == null || v.trim().isEmpty
+                                    ? 'Name is required'
+                                    : null,
+                              ),
+                            ),
                           ),
                           const SizedBox(height: 12),
 
@@ -429,18 +440,18 @@ class _EditItemPageState extends ConsumerState<EditItemPage> {
                                       value: c,
                                       child: Row(
                                         children: [
-                                          Icon(c.icon,
-                                              size: 16, color: c.color),
+                                          // Icon(c.icon,
+                                          //     size: 16, color: c.color),
                                           const SizedBox(width: 8),
                                           Text(c.label),
                                         ],
                                       ),
                                     ))
                                 .toList(),
-                            onChanged: (v) {
-                              if (v != null) {
-                                setState(() => _selectedCategory = v);
-                              }
+                            onChanged: _isProductLocked
+                                ? null
+                                : (v) {
+                              if (v != null) setState(() => _selectedCategory = v);
                             },
                           ),
                           const SizedBox(height: 12),
@@ -468,27 +479,49 @@ class _EditItemPageState extends ConsumerState<EditItemPage> {
                             children: [
                               Expanded(
                                 flex: 3,
-                                child: _field(
-                                  controller: _weightCtrl,
-                                  label: 'Weight (optional)',
-                                  icon: Icons.scale_outlined,
-                                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                child: GestureDetector(
+                                  onTap: _isProductLocked
+                                      ? () => ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(content: Text('Registered product information cannot be edited.')),
+                                  )
+                                      : null,
+                                  child: AbsorbPointer(
+                                    absorbing: _isProductLocked,
+                                    child: _field(
+                                      controller: _weightCtrl,
+                                      label: 'Weight (optional)',
+                                      icon: Icons.scale_outlined,
+                                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                    ),
+                                  ),
                                 ),
                               ),
                               SizedBox(width: context.w(0.02)),
                               SizedBox(
                                 width: context.w(0.33),
-                                child: DropdownButtonFormField<String>(
-                                  value: _selectedWeightUnit,
-                                  isExpanded: true,
-                                  decoration: _inputDecoration('Unit', Icons.straighten_outlined),
-                                  style: GoogleFonts.poppins(fontSize: 14, color: AppColors.textPrimary),
-                                  items: AppStrings.weightUnits
-                                      .map((u) => DropdownMenuItem(value: u, child: Text(u)))
-                                      .toList(),
-                                  onChanged: (v) {
-                                    if (v != null) setState(() => _selectedWeightUnit = v);
-                                  },
+                                child: GestureDetector(
+                                  onTap: _isProductLocked
+                                      ? () => ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(content: Text('Registered product information cannot be edited.')),
+                                  )
+                                      : null,
+                                  child: AbsorbPointer(
+                                    absorbing: _isProductLocked,
+                                    child: DropdownButtonFormField<String>(
+                                      value: _selectedWeightUnit,
+                                      isExpanded: true,
+                                      decoration: _inputDecoration('Unit', Icons.straighten_outlined),
+                                      style: GoogleFonts.poppins(fontSize: 14, color: AppColors.textPrimary),
+                                      items: AppStrings.weightUnits
+                                          .map((u) => DropdownMenuItem(value: u, child: Text(u)))
+                                          .toList(),
+                                      onChanged: _isProductLocked
+                                          ? null
+                                          : (v) {
+                                        if (v != null) setState(() => _selectedWeightUnit = v);
+                                      },
+                                    ),
+                                  ),
                                 ),
                               ),
                             ],
@@ -695,7 +728,7 @@ class _EditHeader extends StatelessWidget {
               // ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
           Row(
             children: [
 

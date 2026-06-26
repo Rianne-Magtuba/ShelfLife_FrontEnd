@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../constants/app_constants.dart';
 import '../app/router.dart';
+import '../constants/responsive_extensions.dart';
 
 class MainScaffold extends StatelessWidget {
   final Widget child;
@@ -41,7 +42,7 @@ class _AppBottomNav extends StatelessWidget {
         color: Colors.white,
         boxShadow: [
           BoxShadow(
-            color: AppColors.mediumBlue.withOpacity(0.12),
+            color: AppColors.mediumBlue.withOpacity(0.30),
             blurRadius: 20,
             offset: const Offset(0, -4),
           ),

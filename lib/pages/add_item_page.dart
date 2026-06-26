@@ -138,6 +138,8 @@ class _AddItemPageState extends ConsumerState<AddItemPage>
     }
 
     final changeCtrl = TextEditingController();
+    final proposedNameCtrl = TextEditingController(text: _nameCtrl.text);
+    final proposedWeightCtrl = TextEditingController(text: _weightCtrl.text);
 
     String selectedReason = 'Incorrect Product Name';
 
@@ -155,9 +157,17 @@ class _AddItemPageState extends ConsumerState<AddItemPage>
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setState) {
+            return MediaQuery.removeViewInsets(
+                removeBottom: true,
+                context: context,
+                child:  AlertDialog(
 
-            return AlertDialog(
-              title: Text(
+                  insetPadding: EdgeInsets.symmetric(
+                    horizontal: context.w(0.06),
+                    vertical: context.h(0.03),
+                  ),
+
+                  title: Text(
                 'Request Product Correction',
                 style: GoogleFonts.poppins(
                   fontSize: context.sp(20),
@@ -170,6 +180,7 @@ class _AddItemPageState extends ConsumerState<AddItemPage>
                   mainAxisSize: MainAxisSize.min,
                   children: [
 
+                    //c
                     TextFormField(
                       initialValue: _barcodeCtrl.text,
                       readOnly: true,
@@ -181,20 +192,20 @@ class _AddItemPageState extends ConsumerState<AddItemPage>
                     SizedBox(height: context.h(0.015)),
 
                     TextFormField(
-                      initialValue: _nameCtrl.text,
-                      readOnly: true,
+                      controller: proposedNameCtrl,
+                      textCapitalization: TextCapitalization.words,
                       decoration: const InputDecoration(
-                        labelText: 'Product Name',
+                        labelText: 'Proposed Name',
                       ),
                     ),
 
                     SizedBox(height: context.h(0.015)),
 
                     TextFormField(
-                      initialValue: '${_weightCtrl.text} $_weightUnit',
-                      readOnly: true,
-                      decoration: const InputDecoration(
-                        labelText: 'Weight',
+                      controller: proposedWeightCtrl,
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      decoration: InputDecoration(
+                        labelText: 'Proposed Weight ($_weightUnit)',
                       ),
                     ),
                     SizedBox(height: context.h(0.015)),
@@ -282,10 +293,9 @@ class _AddItemPageState extends ConsumerState<AddItemPage>
                     try {
                       await InventoryService().sendCorrectionRequest(
                         barcode:             _barcodeCtrl.text,
-                        proposedName:        _nameCtrl.text,
+                        proposedName:        proposedNameCtrl.text.trim(),
                         proposedCategory:    _category.label,
-                          proposedWeightGrams: WeightConverter.toGrams(  _weightCtrl.text, _weightUnit)?.toStringAsFixed(2) ?? _weightCtrl.text,
-                       // proposedWeightGrams: _weightCtrl.text,
+                        proposedWeightGrams: WeightConverter.toGrams(proposedWeightCtrl.text.trim(), _weightUnit)?.toStringAsFixed(2) ?? proposedWeightCtrl.text.trim(),
                         proposedPrice:       _priceCtrl.text,
                       );
 
@@ -311,7 +321,8 @@ class _AddItemPageState extends ConsumerState<AddItemPage>
                   child: const Text('Submit'),
                 ),
               ],
-            );
+                ),
+                );
           },
         );
       },
