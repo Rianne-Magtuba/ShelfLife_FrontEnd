@@ -140,7 +140,7 @@ Widget build(BuildContext context) {
                     const SizedBox(height: 20),
                     if (urgentItems.isNotEmpty) ...[
                       SectionHeader(
-                        title: '⚠️ Urgent Alerts',
+                        title: 'Urgent Alerts',
                         trailing: TextButton(
                           onPressed: () => context.go(AppRoutes.inventory),
                           child: Text('View all',
@@ -157,7 +157,7 @@ Widget build(BuildContext context) {
                       const SizedBox(height: 20),
                     ],
                     SectionHeader(
-                      title: '📦 Recently Added',
+                      title: 'Recently Added',
                       trailing: TextButton(
                         onPressed: () => context.go(AppRoutes.inventory),
                         child: Text('View all',

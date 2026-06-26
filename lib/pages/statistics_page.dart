@@ -32,9 +32,63 @@ class _StatisticsPageState extends ConsumerState<StatisticsPage> {
 
   @override
   Widget build(BuildContext context) {
-    final data = ref.watch(analyticsProvider);
+    final asyncData = ref.watch(analyticsProvider);
 
-    // ── Empty state ──────────────────────────────────────────────────────
+    // ── Loading ─────────────────────────────────────────────────────────
+    if (asyncData.isLoading) {
+      return AppBackground(
+        child: Column(
+          children: [
+            const StatisticsHeader(),
+            const Expanded(
+              child: Center(
+                child: CircularProgressIndicator(color: AppColors.mediumBlue),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // ── Error ────────────────────────────────────────────────────────────
+    if (asyncData.hasError) {
+      return AppBackground(
+        child: Column(
+          children: [
+            const StatisticsHeader(),
+            Expanded(
+              child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.wifi_off_rounded,
+                        size: 52, color: AppColors.textSecondary),
+                    const SizedBox(height: 12),
+                    Text(
+                      'Could not load statistics',
+                      style: GoogleFonts.poppins(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textSecondary),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      'Check your connection and try again.',
+                      style: GoogleFonts.poppins(
+                          fontSize: 13, color: AppColors.textSecondary),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // ── Data ─────────────────────────────────────────────────────────────
+    final data = asyncData.value!;
+
     if (data.isEmpty) {
       return AppBackground(
         child: Column(
@@ -56,8 +110,7 @@ class _StatisticsPageState extends ConsumerState<StatisticsPage> {
                     const SizedBox(height: 8),
                     Text('Add items to your pantry to see insights.',
                         style: GoogleFonts.poppins(
-                            fontSize: 13,
-                            color: AppColors.textSecondary)),
+                            fontSize: 13, color: AppColors.textSecondary)),
                   ],
                 ),
               ),
@@ -67,6 +120,7 @@ class _StatisticsPageState extends ConsumerState<StatisticsPage> {
       );
     }
 
+    // ── Normal content ────────────────────────────────────────────────────
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: AppBackground(

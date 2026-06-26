@@ -16,6 +16,7 @@ import '../core/business/services/product_service.dart';
 import '../core/business/providers/inventory_provider.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import '../constants/responsive_extensions.dart';
+import '../core/common/utils/weight_converter.dart';
 
 
 
@@ -283,7 +284,8 @@ class _AddItemPageState extends ConsumerState<AddItemPage>
                         barcode:             _barcodeCtrl.text,
                         proposedName:        _nameCtrl.text,
                         proposedCategory:    _category.label,
-                        proposedWeightGrams: _weightCtrl.text,
+                          proposedWeightGrams: WeightConverter.toGrams(  _weightCtrl.text, _weightUnit)?.toStringAsFixed(2) ?? _weightCtrl.text,
+                       // proposedWeightGrams: _weightCtrl.text,
                         proposedPrice:       _priceCtrl.text,
                       );
 
@@ -374,11 +376,11 @@ class _AddItemPageState extends ConsumerState<AddItemPage>
       barcodeRef:        _barcodeCtrl.text.trim(),
       customName:        _nameCtrl.text.trim(),
       customCategory:    _category.label ,
-      customWeightGrams: double.tryParse(_weightCtrl.text.trim()),
+      customWeightGrams: WeightConverter.toGrams(_weightCtrl.text.trim(), _weightUnit),
       customPrice:       double.tryParse(_priceCtrl.text.trim()),
       quantity:        _quantity,
       quality:         'Good',
-      notes:           _notesCtrl.text.trim(),
+      notes: WeightConverter.encodeUnitInNotes(_notesCtrl.text.trim(), _weightUnit),
       expirationDate:  resolvedExpiry!,
     );
 
@@ -400,7 +402,7 @@ class _AddItemPageState extends ConsumerState<AddItemPage>
               barcode: _barcodeCtrl.text.trim(),
               name: _nameCtrl.text.trim(),
               category: _category.label,
-              weightGrams: double.tryParse(_weightCtrl.text.trim()),
+              weightGrams: WeightConverter.toGrams(_weightCtrl.text.trim(), _weightUnit),
               price: double.tryParse(_priceCtrl.text.trim()),
             )
           );
@@ -834,15 +836,15 @@ class _ManualFormState extends State<_ManualForm> with AutomaticKeepAliveClientM
                           RegExp(r'^\d+\.?\d{0,2}'),
                         ),
                       ],
-                      decoration: InputDecoration(
-                        labelText: 'Weight (optional)',
-                        prefixIcon: const Icon(
-                          Icons.scale_outlined,
-                          size: 18,
-                        ),
-                        filled: true,
-                        fillColor: AppColors.inputBg,
-                      ),
+                        decoration: InputDecoration(
+    labelText: 'Weight (optional)',
+    prefixIcon: const Icon(
+      Icons.scale_outlined,
+      size: 18,
+    ),
+    filled: true,
+    fillColor: AppColors.inputBg,
+  ),
                     ),
                   ),
                 ),
@@ -864,7 +866,8 @@ class _ManualFormState extends State<_ManualForm> with AutomaticKeepAliveClientM
                       : null,
                   child: AbsorbPointer(
                     absorbing: widget.isProductLocked,
-                    child: DropdownButtonFormField<String>(
+                    child:
+                    DropdownButtonFormField<String>(
                       initialValue: widget.weightUnit,
                       decoration: const InputDecoration(
                         labelText: 'Unit',

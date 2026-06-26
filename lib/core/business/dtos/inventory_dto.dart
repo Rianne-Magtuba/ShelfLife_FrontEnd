@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import '../../../core/common/entities/food_item.dart';
+import '../../common/utils/weight_converter.dart';
 
 class AddInventoryItemRequest {
   final bool isCustomItem;
@@ -116,19 +117,25 @@ class InventoryItemResponse {
     );
   }
 
-  FoodItem toFoodItem() => FoodItem(
-    id:           inventoryId,
-    name:         displayName,
-    category:     _parseCategory(displayCategory),
-    quantity:     quantity,
-    weight:       weightGrams?.toStringAsFixed(0),
-    weightUnit:   weightGrams != null ? 'g' : null,
-    expiryDate:   expirationDate,
-    dateAdded:    dateRegistered,
-    purchasePrice: displayPrice > 0 ? displayPrice : null,
-    notes:        notes.isNotEmpty ? notes : null,
-    barcodeRef: barcodeRef?.isEmpty == true ? null : barcodeRef,
-  );
+  FoodItem toFoodItem() {
+    final originalUnit = WeightConverter.decodeUnitFromNotes(notes);
+    final cleanNotes   = WeightConverter.stripTagFromNotes(notes);
+
+    return FoodItem(
+      id:            inventoryId,
+      name:          displayName,
+      category:      _parseCategory(displayCategory),
+      quantity:      quantity,
+      weight:        weightGrams?.toStringAsFixed(6),   // fix Bug 1: was toStringAsFixed(0)
+      weightUnit:    weightGrams != null ? originalUnit : null, // fix Bug 2: was hardcoded 'g'
+      expiryDate:    expirationDate,
+      dateAdded:     dateRegistered,
+      purchasePrice: displayPrice > 0 ? displayPrice : null,
+      notes:         cleanNotes,
+      barcodeRef:    barcodeRef?.isEmpty == true ? null : barcodeRef,
+    );
+  }
+
 
   static ItemCategory _parseCategory(String c) {
     switch (c.toLowerCase()) {

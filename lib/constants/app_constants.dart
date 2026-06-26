@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../core/common/utils/weight_converter.dart';
+
 
 class AppColors {
   // Primary palette
@@ -83,7 +85,8 @@ class AppStrings {
   ];
 
   // Weight units
-  static const List<String> weightUnits = ['g', 'kg', 'ml', 'L'];
+  //static const List<String> weightUnits = ['g', 'kg', 'ml', 'L'];
+  static const List<String> weightUnits = WeightConverter.supportedUnits;
 
   // Alert lead times
   static const List<int> alertLeadTimes = [1, 3, 5, 7];

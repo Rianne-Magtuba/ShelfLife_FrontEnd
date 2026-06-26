@@ -255,23 +255,53 @@ final notificationsProvider = Provider<List<AppNotification>>((ref) {
   return notifs;
 });
 
-final analyticsProvider = Provider<AnalyticsResult>((ref) {
-  final items = ref.watch(inventoryProvider).value ?? [];
-  final service = InventoryService();
+class AnalyticsNotifier extends AsyncNotifier<AnalyticsResult> {
+  @override
+  Future<AnalyticsResult> build() async {
+    // Watches inventory — re-runs automatically when inventory changes
+    final items = ref.watch(inventoryProvider).value ?? [];
+    final service = InventoryService();
 
-  debugPrint(
-      'Consumed: ${service.getConsumedCount()} | '
-          'Discarded: ${service.getDiscardedCount()}');
+    List<FoodItem> consumedItems  = [];
+    List<FoodItem> discardedItems = [];
 
-  return AnalyticsService.compute(
-    items,
-    consumedCount: service.getConsumedCount(),
-    discardedCount: service.getDiscardedCount(),
+    try {
+      final results = await Future.wait([
+        service.fetchConsumedItems(),
+        service.fetchDiscardedItems(),
+      ]);
+      consumedItems  = results[0];
+      discardedItems = results[1];
+    } catch (e) {
+      // Network failed — degrade gracefully to cache-only mode
+      debugPrint('[Analytics] Backend fetch failed, falling back to cache: $e');
+      return AnalyticsService.compute(
+        items,
+        consumedCount:    CacheService.loadConsumedCount(),
+        discardedCount:   CacheService.loadDiscardedCount(),
+        consumedTimeline: CacheService.loadConsumedTimeline(),
+        wastedByCategory: CacheService.loadDiscardedCategories(),
+      );
+    }
 
-    consumedTimeline:
-    CacheService.loadConsumedTimeline(),
+    // Build wasted-by-category from actual discarded items
+    final wastedByCategory = <String, int>{};
+    for (final item in discardedItems) {
+      wastedByCategory[item.category.label] =
+          (wastedByCategory[item.category.label] ?? 0) + 1;
+    }
 
-    wastedByCategory:
-    CacheService.loadDiscardedCategories(),
-  );
-});
+    return AnalyticsService.compute(
+      items,
+      consumedCount:    consumedItems.length,
+      discardedCount:   discardedItems.length,
+      consumedTimeline: CacheService.loadConsumedTimeline(),
+      wastedByCategory: wastedByCategory,
+    );
+  }
+}
+
+final analyticsProvider =
+AsyncNotifierProvider<AnalyticsNotifier, AnalyticsResult>(
+  AnalyticsNotifier.new,
+);
