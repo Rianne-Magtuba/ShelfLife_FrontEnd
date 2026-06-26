@@ -9,12 +9,12 @@ const List<Map<String, String>> _faqs = [
   {
     'q': 'How do I add items to my inventory?',
     'a':
-        'Tap the "+" button on the home screen. You can either scan the expiry date with your camera or enter details manually. Fill in the item name, category, quantity, and expiry date.',
+        'Tap the "+" button on the home screen. You can either scan a barcode of a product with your camera or enter details manually. Fill in the item name, category, quantity, and expiry date.',
   },
   {
     'q': 'When will I receive expiration notifications?',
     'a':
-        'You\'ll receive notifications based on your "Default Alert Days" setting (found in Profile → App Preferences). By default, you\'ll be notified 3 days before an item expires.',
+        'You\'ll receive notifications based on your notification settings (found in Profile → Notification Settings). By default, you\'ll be notified 3 days before an item expires.',
   },
   {
     'q': 'How do I edit or delete an item?',
@@ -47,11 +47,11 @@ const List<Map<String, String>> _scanSteps = [
   },
   {
     'title': 'Position Label',
-    'desc': 'Align the expiration date within the guide box on screen',
+    'desc': 'Align the barcode within the guide box on screen',
   },
   {
     'title': 'Capture',
-    'desc': 'Tap \'Start Scanning\' and hold steady until date is recognized',
+    'desc': 'Tap \'Start Scanning\' and hold steady until code is recognized',
   },
   {
     'title': 'Confirm',
@@ -72,7 +72,7 @@ class _HelpPageState extends State<HelpPage> {
   final Set<int> _expanded = {};
 
   static const String _appVersion = '1.0.0';
-  static const String _buildDate = 'April 2025';
+  static const String _buildDate = 'June 2026';
 
   @override
   Widget build(BuildContext context) {
@@ -95,10 +95,10 @@ class _HelpPageState extends State<HelpPage> {
                     const SizedBox(height: 20),
                     _buildAppInfo(context),
                     const SizedBox(height: 20),
-                    _buildLegalSection(context),
-                    const SizedBox(height: 20),
-                    _buildFeedbackButton(context),
-                    const SizedBox(height: 32),
+                     _buildLegalSection(context),
+                    // const SizedBox(height: 20),
+                    // // _buildFeedbackButton(context),
+                    // const SizedBox(height: 32),
                   ],
                 ),
               ),
@@ -291,18 +291,18 @@ class _HelpPageState extends State<HelpPage> {
 
   // ── Feedback button ──
 
-  Widget _buildFeedbackButton(BuildContext context) {
-    return SizedBox(
-      width: double.infinity,
-      child: ElevatedButton.icon(
-        onPressed: () => _openFeedback(context),
-        icon: const Icon(Icons.mail_outline, size: 18),
-        label: Text('Contact / Send Feedback',
-            style:
-                GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w600)),
-      ),
-    );
-  }
+  // Widget _buildFeedbackButton(BuildContext context) {
+  //   return SizedBox(
+  //     width: double.infinity,
+  //     child: ElevatedButton.icon(
+  //       onPressed: () => _openFeedback(context),
+  //       icon: const Icon(Icons.mail_outline, size: 18),
+  //       label: Text('Contact / Send Feedback',
+  //           style:
+  //               GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w600)),
+  //     ),
+  //   );
+  // }
 
   // ── Dialogs ──
 
@@ -321,13 +321,13 @@ class _HelpPageState extends State<HelpPage> {
             children: [
               _ChangelogEntry(
                 version: 'v1.0.0',
-                date: 'April 2025',
+                date: 'June 2026',
                 changes: [
                   'Initial release',
-                  'Camera expiry date scanning',
-                  'Push notifications for expiring items',
-                  'Category-based inventory management',
+                  'Barcode scan Products',
+                  'Push notifications for items',
                   'Statistics & insights dashboard',
+                  'An app developed for ADET',
                 ],
               ),
             ],
@@ -378,8 +378,7 @@ class _HelpPageState extends State<HelpPage> {
                 controller: controller,
                 padding: const EdgeInsets.all(AppSizes.paddingM),
                 child: Text(
-                  'This is a placeholder for the $title document. '
-                  'Replace this with your actual legal content or load it from a URL/asset.',
+                  'Though shall not troll in entering product details, wag magaspang. eme hahaha',
                   style: GoogleFonts.poppins(
                       fontSize: 14,
                       color: AppColors.textSecondary,
@@ -393,53 +392,53 @@ class _HelpPageState extends State<HelpPage> {
     );
   }
 
-  void _openFeedback(BuildContext context) {
-    final ctrl = TextEditingController();
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-          borderRadius:
-              BorderRadius.vertical(top: Radius.circular(AppSizes.radiusXL))),
-      builder: (ctx) => Padding(
-        padding: EdgeInsets.fromLTRB(
-            24, 24, 24, MediaQuery.of(ctx).viewInsets.bottom + 24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Send Feedback',
-                style: GoogleFonts.poppins(
-                    fontSize: 18, fontWeight: FontWeight.w700)),
-            const SizedBox(height: 4),
-            Text('We\'d love to hear from you!',
-                style: GoogleFonts.poppins(
-                    fontSize: 13, color: AppColors.textSecondary)),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: ctrl,
-              maxLines: 5,
-              decoration: const InputDecoration(
-                hintText: 'Describe your issue or suggestion...',
-                alignLabelWithHint: true,
-              ),
-            ),
-            const SizedBox(height: 20),
-            PrimaryButton(
-              label: 'Send',
-              icon: Icons.send,
-              onPressed: () {
-                Navigator.pop(ctx);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Feedback sent! Thank you.')),
-                );
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  // void _openFeedback(BuildContext context) {
+  //   final ctrl = TextEditingController();
+  //   showModalBottomSheet(
+  //     context: context,
+  //     isScrollControlled: true,
+  //     shape: const RoundedRectangleBorder(
+  //         borderRadius:
+  //             BorderRadius.vertical(top: Radius.circular(AppSizes.radiusXL))),
+  //     builder: (ctx) => Padding(
+  //       padding: EdgeInsets.fromLTRB(
+  //           24, 24, 24, MediaQuery.of(ctx).viewInsets.bottom + 24),
+  //       child: Column(
+  //         mainAxisSize: MainAxisSize.min,
+  //         crossAxisAlignment: CrossAxisAlignment.start,
+  //         children: [
+  //           Text('Send Feedback',
+  //               style: GoogleFonts.poppins(
+  //                   fontSize: 18, fontWeight: FontWeight.w700)),
+  //           const SizedBox(height: 4),
+  //           Text('We\'d love to hear from you!',
+  //               style: GoogleFonts.poppins(
+  //                   fontSize: 13, color: AppColors.textSecondary)),
+  //           const SizedBox(height: 16),
+  //           TextFormField(
+  //             controller: ctrl,
+  //             maxLines: 5,
+  //             decoration: const InputDecoration(
+  //               hintText: 'Describe your issue or suggestion...',
+  //               alignLabelWithHint: true,
+  //             ),
+  //           ),
+  //           const SizedBox(height: 20),
+  //           PrimaryButton(
+  //             label: 'Send',
+  //             icon: Icons.send,
+  //             onPressed: () {
+  //               Navigator.pop(ctx);
+  //               ScaffoldMessenger.of(context).showSnackBar(
+  //                 const SnackBar(content: Text('Feedback sent! Thank you.')),
+  //               );
+  //             },
+  //           ),
+  //         ],
+  //       ),
+  //     ),
+  //   );
+  // }
 }
 
 // ─── Supporting Widgets ───────────────────────────────────────────────────────

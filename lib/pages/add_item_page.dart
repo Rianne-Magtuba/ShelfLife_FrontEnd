@@ -157,9 +157,17 @@ class _AddItemPageState extends ConsumerState<AddItemPage>
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setState) {
+            return MediaQuery.removeViewInsets(
+                removeBottom: true,
+                context: context,
+                child:  AlertDialog(
 
-            return AlertDialog(
-              title: Text(
+                  insetPadding: EdgeInsets.symmetric(
+                    horizontal: context.w(0.06),
+                    vertical: context.h(0.03),
+                  ),
+
+                  title: Text(
                 'Request Product Correction',
                 style: GoogleFonts.poppins(
                   fontSize: context.sp(20),
@@ -172,6 +180,7 @@ class _AddItemPageState extends ConsumerState<AddItemPage>
                   mainAxisSize: MainAxisSize.min,
                   children: [
 
+                    //c
                     TextFormField(
                       initialValue: _barcodeCtrl.text,
                       readOnly: true,
@@ -312,7 +321,8 @@ class _AddItemPageState extends ConsumerState<AddItemPage>
                   child: const Text('Submit'),
                 ),
               ],
-            );
+                ),
+                );
           },
         );
       },

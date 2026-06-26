@@ -327,9 +327,9 @@ class _StatCard extends StatelessWidget {
             borderRadius: BorderRadius.circular(AppSizes.radiusL),
             boxShadow: [
               BoxShadow(
-                  color: color.withOpacity(0.1),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2))
+                  color: color.withOpacity(0.20),
+                  blurRadius: 2,
+                  offset: const Offset(0, 5))
             ],
           ),
           child: Column(

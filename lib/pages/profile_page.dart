@@ -269,10 +269,10 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                           },
                         icon: const Icon(Icons.logout, size: 18),
                         label: Text('Log Out',
-                            style: GoogleFonts.poppins(
-                                fontSize: 15, fontWeight: FontWeight.w600)),
+                            style: GoogleFonts.poppins( fontSize: 15, fontWeight: FontWeight.w600)),
                         style: OutlinedButton.styleFrom(
-                          foregroundColor: AppColors.expired,
+                          backgroundColor: AppColors.expired,
+                          foregroundColor: Colors.white,
                           side: const BorderSide(
                               color: AppColors.expired, width: 1.5),
                           padding: const EdgeInsets.symmetric(vertical: 14),
@@ -373,7 +373,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
         borderRadius: BorderRadius.circular(AppSizes.radiusL),
         boxShadow: [
           BoxShadow(
-            color: AppColors.mediumBlue.withOpacity(0.06),
+            color: AppColors.mediumBlue.withOpacity(0.20),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
