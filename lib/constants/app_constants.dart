@@ -28,7 +28,7 @@ class AppColors {
 
   // Neutral
   static const Color textPrimary = Color(0xFF1A1A2E);
-  static const Color textSecondary = Color(0xFF6B7280);
+  static const Color textSecondary = Color(0xFF4A4F59);
   static const Color cardBg = Colors.white;
   static const Color divider = Color(0xFFE5E7EB);
   static const Color inputBg = Color(0xFFF9FAFB);
