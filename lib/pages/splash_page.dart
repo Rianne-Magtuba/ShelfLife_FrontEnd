@@ -49,7 +49,7 @@ class _SplashPageState extends State<SplashPage> {
               left: 0,
               right: 0,
               child: Opacity(
-                opacity: 0.50,
+                opacity: 0.40,
                 child: SizedBox(
                   height: screenHeight * 0.35,
                   width: double.infinity,

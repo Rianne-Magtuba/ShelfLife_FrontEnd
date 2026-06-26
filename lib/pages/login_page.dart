@@ -229,7 +229,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
               left: 0,
               right: 0,
               child: Opacity(
-                opacity: 0.50,
+                opacity: 0.40,
                 child: SizedBox(
                   height: 300,
                   width: double.infinity,
