@@ -1,19 +1,24 @@
 import 'package:flutter/foundation.dart';
 import '../../common/entities/entities.dart';
 import '../../common/interfaces/i_inventory_service.dart';  // ← correct interface
+import '../../data/services/api_client.dart';
 import '../../data/services/inventory_data_service.dart';
 import '../../data/services/cache_service.dart';
+import '../../data/services/user_data_service.dart';
 import '../dtos/inventory_dto.dart';
+import '../dtos/product_dto.dart';
 import 'notification_service.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class InventoryService {
 
   final IInventoryDataService _data = InventoryDataService();
+  final UserDataService _userDataService = UserDataService();
+
   // ── Inventory CRUD ──────────────────────────────────────────────────────
 
   Future<List<FoodItem>> fetchInventory() async {
-    final settings = _data.loadNotificationSettings();
+    final settings = await getNotificationSettings();
     try {
       final items = await _data.fetchInventory();
       await _data.saveInventory(items);
@@ -22,6 +27,7 @@ class InventoryService {
         daysBeforeExpiry: settings.alertLeadDays,
         reminderHour: settings.dailyReminderTime.hour,      // ← add
         reminderMinute: settings.dailyReminderTime.minute,
+        frequency:        settings.frequency,
       );
       return items;
     } catch (e) {
@@ -32,7 +38,7 @@ class InventoryService {
 
   Future<FoodItem> createItem(AddInventoryItemRequest request) async {
     final item     = await _data.createItem(request);
-    final settings = _data.loadNotificationSettings();
+    final settings = await getNotificationSettings();
     await LocalNotificationService.scheduleExpiryNotification(
       item,
       daysBeforeExpiry: settings.alertLeadDays,
@@ -59,7 +65,7 @@ class InventoryService {
         orElse: () => throw Exception('Updated item not found'),
       );
 
-      final settings = _data.loadNotificationSettings();
+      final settings = await getNotificationSettings();
 
       await LocalNotificationService.cancelNotification(inventoryId);
 
@@ -114,54 +120,51 @@ class InventoryService {
 
   // ── Notification settings ───────────────────────────────────────────────
 
-  NotificationSettings getNotificationSettings() =>
-      _data.loadNotificationSettings();
+  Future<NotificationSettings> getNotificationSettings() async {
+    try {
+      return await _userDataService.getNotificationSettings();
+    } catch (e) {
+      debugPrint('[Settings] API failed, using cache: $e');
+      return CacheService.loadNotificationSettings();
+    }
+  }
 
-  Future<void> saveNotificationSettings(NotificationSettings settings) =>
-      _data.saveNotificationSettings(settings);
+  Future<void> saveNotificationSettings(NotificationSettings settings) async {
+    await Future.wait([
+      _userDataService.saveNotificationSettings(settings),
+      CacheService.saveNotificationSettings(settings),
+    ]);
+  }
 
   //----send request info change method
 
-  Future<void> sendCorrectionEmail({
+  Future<void> sendCorrectionRequest({
     required String barcode,
-    required String currentName,
-    required String currentCategory,
-    required String currentWeight,
-
-    required String requestedName,
-    required String requestedCategory,
-    required String requestedWeight,
-
-    required String reason,
+    required String proposedName,
+    required String proposedCategory,
+    required String proposedWeightGrams,
+    required String proposedPrice,
   }) async {
-
-    final body = '''
-Barcode: $barcode
-
-CURRENT VALUES
-Name: $currentName
-Category: $currentCategory
-Weight: $currentWeight
-
-REQUESTED VALUES
-Name: $requestedName
-Category: $requestedCategory
-Weight: $requestedWeight
-
-Reason:
-$reason
-''';
-
-    final subject = Uri.encodeComponent('Product Correction Request');
-    final encodedBody = Uri.encodeComponent(body);
-
-    final uri = Uri.parse(
-      'mailto:ianmagtuba19@gmail.com?subject=$subject&body=$encodedBody',
+    final response = await ApiClient.post(
+      '/api/ProductUpdate',
+      ProductUpdateRequest(
+        barcode:             barcode,
+        proposedName:        proposedName,
+        proposedCategory:    proposedCategory,
+        proposedWeightGrams: double.tryParse(proposedWeightGrams) ?? 0,
+        proposedPrice:       double.tryParse(proposedPrice) ?? 0,
+      ).toJson(),
     );
 
-    await launchUrl(
-      uri,
-      mode: LaunchMode.externalApplication,
+    if (response.statusCode == 200) {
+      debugPrint('[InventoryService] Correction request submitted');
+      return;
+    }
+
+    throw Exception(
+      ApiClient.parseError(response, 'Failed to submit correction request.'),
     );
   }
+
+
 }

@@ -403,16 +403,6 @@ class LocalNotificationService {
     debugPrint('[Notifications] Rescheduling — freq: $frequency, '
         'leadDays: $daysBeforeExpiry, time: $reminderHour:$reminderMinute');
 
-    if (frequency == 'realtime') {
-      final danger = items.where(
-            (i) => i.status == ItemStatus.expiringSoon || i.status == ItemStatus.expired,
-      ).toList();
-      for (final item in danger) {
-        await showNow(item);
-      }
-      debugPrint('[Notifications] Real-time: ${danger.length} items notified');
-      return;
-    }
 
     // Calculate delay until reminder time today (or tomorrow if passed)
     final now = tz.TZDateTime.now(tz.local);
@@ -568,47 +558,47 @@ class LocalNotificationService {
   }
   // ── Debug: list pending ───────────────────────────────────────────────────
 
-  static Future<void> debugAlarmPermission() async {
-    final android = _plugin
-        .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
-    final result = await android?.canScheduleExactNotifications();
-    debugPrint('[Notifications] canScheduleExactNotifications: $result');
-  }
-  static Future<void> debugShowImmediate() async {
-    if (!_initialized) await initialize();
-
-    await _plugin.show(
-      88888,
-      '🔔 Immediate Test',
-      'This fires instantly — no scheduling involved',
-      const NotificationDetails(
-        android: AndroidNotificationDetails(
-          'shelflife_expiry',
-          'Expiry Alerts',
-          importance: Importance.max,
-          priority: Priority.max,
-
-          icon: '@drawable/applogo',
-        ),
-        iOS: DarwinNotificationDetails(
-          presentAlert: true,
-          presentSound: true,
-        ),
-      ),
-    );
-    debugPrint('[Notifications] Immediate notification sent');
-  }
-  static Future<void> debugPending() async {
-    final pending = await _plugin.pendingNotificationRequests();
-
-    debugPrint(
-      '[Notifications] ${pending.length} pending notifications:',
-    );
-
-    for (final p in pending) {
-      debugPrint(
-        'id=${p.id} title=${p.title} body=${p.body}',
-      );
-    }
-  }
+  // static Future<void> debugAlarmPermission() async {
+  //   final android = _plugin
+  //       .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
+  //   final result = await android?.canScheduleExactNotifications();
+  //   debugPrint('[Notifications] canScheduleExactNotifications: $result');
+  // }
+  // static Future<void> debugShowImmediate() async {
+  //   if (!_initialized) await initialize();
+  //
+  //   await _plugin.show(
+  //     88888,
+  //     '🔔 Immediate Test',
+  //     'This fires instantly — no scheduling involved',
+  //     const NotificationDetails(
+  //       android: AndroidNotificationDetails(
+  //         'shelflife_expiry',
+  //         'Expiry Alerts',
+  //         importance: Importance.max,
+  //         priority: Priority.max,
+  //
+  //         icon: '@drawable/applogo',
+  //       ),
+  //       iOS: DarwinNotificationDetails(
+  //         presentAlert: true,
+  //         presentSound: true,
+  //       ),
+  //     ),
+  //   );
+  //   debugPrint('[Notifications] Immediate notification sent');
+  // }
+  // static Future<void> debugPending() async {
+  //   final pending = await _plugin.pendingNotificationRequests();
+  //
+  //   debugPrint(
+  //     '[Notifications] ${pending.length} pending notifications:',
+  //   );
+  //
+  //   for (final p in pending) {
+  //     debugPrint(
+  //       'id=${p.id} title=${p.title} body=${p.body}',
+  //     );
+  //   }
+  // }
 }

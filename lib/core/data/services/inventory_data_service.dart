@@ -15,6 +15,13 @@ class InventoryDataService implements IInventoryDataService {
 
     if (response.statusCode == 200) {
       final jsonList = jsonDecode(response.body) as List<dynamic>;
+
+      // Add this temporarily
+      for (final j in jsonList) {
+        final map = j as Map<String, dynamic>;
+        debugPrint('[fetchInventory] id=${map['inventoryId']} barcodeRef=${map['barcodeRef'] ?? map['BarcodeRef']}');
+      }
+
       return jsonList
           .map((j) => InventoryItemResponse
           .fromJson(j as Map<String, dynamic>)
@@ -37,6 +44,7 @@ class InventoryDataService implements IInventoryDataService {
       final itemResponse = InventoryItemResponse.fromJson(json);
 
       // 2. Map the DTO to your local FoodItem model
+
       return FoodItem(
         id: itemResponse.inventoryId, // Guaranteed to be the real Firestore ID now
         name: itemResponse.displayName,
@@ -48,6 +56,7 @@ class InventoryDataService implements IInventoryDataService {
         dateAdded: itemResponse.dateRegistered,
         purchasePrice: itemResponse.displayPrice,
         notes: itemResponse.notes.isNotEmpty ? itemResponse.notes : null,
+        barcodeRef:    itemResponse.barcodeRef?.isEmpty == true ? null : itemResponse.barcodeRef, // ← add
       );
     }
 
@@ -134,11 +143,5 @@ class InventoryDataService implements IInventoryDataService {
 
   // ── Notification settings ───────────────────────────────────────────────
 
-  @override
-  NotificationSettings loadNotificationSettings() =>
-      CacheService.loadNotificationSettings();
 
-  @override
-  Future<void> saveNotificationSettings(NotificationSettings settings) =>
-      CacheService.saveNotificationSettings(settings);
 }

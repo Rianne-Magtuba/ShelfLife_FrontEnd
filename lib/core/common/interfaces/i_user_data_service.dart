@@ -1,4 +1,5 @@
 import '../../business/dtos/user_dto.dart';
+import '../entities/notification.dart';
 
 abstract class IUserDataService {
   Future<LoginResponse> login(LoginRequest request);
@@ -13,4 +14,9 @@ abstract class IUserDataService {
   Future<void> changePassword(
       ChangePasswordRequest request,
       );
+
+  // ── Notification settings ───────────────────────────────────────────────
+  Future<NotificationSettings> getNotificationSettings(); // ← now async
+  Future<void> saveNotificationSettings(NotificationSettings settings);
+
 }

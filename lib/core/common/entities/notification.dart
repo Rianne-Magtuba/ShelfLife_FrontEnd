@@ -38,7 +38,7 @@ extension NotificationTypeExt on NotificationType {
   IconData get icon {
     switch (this) {
       case NotificationType.expired:      return Icons.warning_amber_outlined;
-      case NotificationType.expiringSoon: return Icons.notifications_outlined;
+      case NotificationType.expiringSoon: return Icons.fastfood;
       case NotificationType.consumed:     return Icons.check_circle_outline;
       case NotificationType.added:        return Icons.add_circle_outline;
     }

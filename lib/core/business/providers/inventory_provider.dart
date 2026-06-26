@@ -16,17 +16,32 @@ class InventoryNotifier extends AsyncNotifier<List<FoodItem>> {
     final cached = _service.loadCached();
     if (cached.isNotEmpty) state = AsyncValue.data(cached);
 
-    final items = await _service.fetchInventory(); // wait for real data
-    state = AsyncValue.data(items);               // set state first
-    await _updatePersistentNotification();         // then notify based on real data
+    final items = await _service.fetchInventory();
+    state = AsyncValue.data(items);
 
+    // Load settings from API so they follow the account, not the device
+    final settings = await _service.getNotificationSettings();
+    // Also sync to cache for offline use
+    await CacheService.saveNotificationSettings(settings);
+
+    if (settings.enabled) {
+      await LocalNotificationService.scheduleAllFromInventory(
+        items,
+        daysBeforeExpiry: settings.alertLeadDays,
+        reminderHour:     settings.dailyReminderTime.hour,
+        reminderMinute:   settings.dailyReminderTime.minute,
+        frequency:        settings.frequency,
+      );
+    }
+
+   // await _updatePersistentNotification();
     return items;
   }
 
   Future<void> refresh() async {
     state = const AsyncValue.loading();
     state = await AsyncValue.guard(() => _service.fetchInventory());
-    await _updatePersistentNotification();
+ //   await _updatePersistentNotification();
   }
 
   Future<bool> addItem(AddInventoryItemRequest request) async {
@@ -35,10 +50,10 @@ class InventoryNotifier extends AsyncNotifier<List<FoodItem>> {
       final current = state.value ?? [];
       state = AsyncValue.data([newItem, ...current]);
 
-      await _updatePersistentNotification();
+    //  await _updatePersistentNotification();
 
       // ← Schedule notification for the newly added item
-      final settings = _service.getNotificationSettings();
+      final settings = await _service.getNotificationSettings();
       if (settings.enabled) {
         await LocalNotificationService.scheduleExpiryNotification(
           newItem,
@@ -66,9 +81,9 @@ class InventoryNotifier extends AsyncNotifier<List<FoodItem>> {
       final success = await _service.updateItem(inventoryId, request);
       if (success) {
         await refresh();
-        await _updatePersistentNotification();
+     //   await _updatePersistentNotification();
         // ← Reschedule for the updated item with new expiry date
-        final settings = _service.getNotificationSettings();
+        final settings = await _service.getNotificationSettings();
         if (settings.enabled) {
           final updated = state.value?.firstWhere(
                 (i) => i.id == inventoryId,
@@ -115,7 +130,7 @@ class InventoryNotifier extends AsyncNotifier<List<FoodItem>> {
         state = AsyncValue.data(
           current.where((i) => i.id != inventoryId).toList(),
         );
-        await _updatePersistentNotification();
+     //   await _updatePersistentNotification();
       }
 
       return success;
@@ -141,7 +156,7 @@ class InventoryNotifier extends AsyncNotifier<List<FoodItem>> {
         state = AsyncValue.data(
           current.where((i) => i.id != inventoryId).toList(),
         );
-        await _updatePersistentNotification();
+       // await _updatePersistentNotification();
       }
       return success;
     } catch (e) {
@@ -170,32 +185,32 @@ class InventoryNotifier extends AsyncNotifier<List<FoodItem>> {
         reminderMinute: settings.dailyReminderTime.minute,
         frequency: settings.frequency,
       );
-      await LocalNotificationService.debugAlarmPermission();
-      await LocalNotificationService.debugPending();
-      await _updatePersistentNotification();
+      // await LocalNotificationService.debugAlarmPermission();
+      // await LocalNotificationService.debugPending();
+   //   await _updatePersistentNotification();
     } else {
       await LocalNotificationService.cancelAll();
       await LocalNotificationService.cancelPersistentNotification();
     }
   }
 
-  Future<void> _updatePersistentNotification() async {
-    final settings = _service.getNotificationSettings();
-    if (!settings.enabled) {
-      await LocalNotificationService.cancelPersistentNotification();
-      return;
-    }
-
-    final items = state.value ?? [];
-    final expiringSoon = items.where((i) => i.status == ItemStatus.expiringSoon).length;
-    final expired = items.where((i) => i.status == ItemStatus.expired).length;
-
-    await LocalNotificationService.showPersistentNotification(
-      totalItems: items.length,
-      expiringSoon: expiringSoon,
-      expired: expired,
-    );
-  }
+  // Future<void> _updatePersistentNotification() async {
+  //   final settings = await _service.getNotificationSettings();
+  //   if (!settings.enabled) {
+  //     await LocalNotificationService.cancelPersistentNotification();
+  //     return;
+  //   }
+  //
+  //   final items = state.value ?? [];
+  //   final expiringSoon = items.where((i) => i.status == ItemStatus.expiringSoon).length;
+  //   final expired = items.where((i) => i.status == ItemStatus.expired).length;
+  //
+  //   await LocalNotificationService.showPersistentNotification(
+  //     totalItems: items.length,
+  //     expiringSoon: expiringSoon,
+  //     expired: expired,
+  //   );
+  // }
 }
 
 
@@ -209,7 +224,7 @@ AsyncNotifierProvider<InventoryNotifier, List<FoodItem>>(
   InventoryNotifier.new,
 );
 
-final notificationSettingsProvider = StateProvider<NotificationSettings>((ref) {
+final notificationSettingsProvider = FutureProvider<NotificationSettings>((ref) async {
   return InventoryService().getNotificationSettings();
 });
 

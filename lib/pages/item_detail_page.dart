@@ -27,18 +27,29 @@ class ItemDetailPage extends ConsumerStatefulWidget {
 class _ItemDetailPageState extends ConsumerState<ItemDetailPage>{
 
   bool _isConsuming = false;
+  bool _isDeleting = false;
+  FoodItem? _cachedItem;
 
   @override
   Widget build(BuildContext context) {
     final inventoryItems = ref.watch(inventoryProvider).value;
-    final item = inventoryItems?.firstWhereOrNull((i) => i.id == widget.itemId);
-    final isExpired = item?.status == ItemStatus.expired;
+    final freshItem = inventoryItems?.firstWhereOrNull((i) => i.id == widget.itemId);
+
+    // Update cache only when non-null
+    if (freshItem != null) _cachedItem = freshItem;
+
+    // Use cached version so page doesn't flash null during pop
+    final item = _cachedItem;
 
     if (item == null) return const Center(child: CircularProgressIndicator());
 
+    final isExpired = item.status == ItemStatus.expired;
+
     return Scaffold(
-      body: AppBackground(
-        child: Column(
+      body: Stack(
+          children: [
+      AppBackground(
+      child: Column(
           children: [
             // Header with photo
             _ItemHeader(item: item),
@@ -165,6 +176,7 @@ class _ItemDetailPageState extends ConsumerState<ItemDetailPage>{
                             );
 
                             context.pop();
+                            setState(() => _isConsuming = false);
                           } else {
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
@@ -172,6 +184,8 @@ class _ItemDetailPageState extends ConsumerState<ItemDetailPage>{
                                 backgroundColor: Colors.redAccent,
                               ),
                             );
+
+
                           }
                         } finally {
                           if (mounted) {
@@ -192,33 +206,30 @@ class _ItemDetailPageState extends ConsumerState<ItemDetailPage>{
                     // Delete
                     OutlinedButton.icon(
                       onPressed: () async {
-                        final confirmed =
-                        await showDeleteConfirmation(
+                        final confirmed = await showDeleteConfirmation(
                           context,
                           item.name,
                           isExpired,
                         );
-                        debugPrint('confirmed = $confirmed');
                         if (confirmed == true && context.mounted) {
-                          // 1. Capture the boolean result
+                          setState(() => _isDeleting = true);  // add this
+
                           final success = await ref
                               .read(inventoryProvider.notifier)
                               .discardItem(item.id);
 
                           if (context.mounted) {
+                            setState(() => _isDeleting = false);  // add this
                             if (success) {
-                              // 2. Only show this if the backend actually deleted it
                               ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                    content: Text('${item.name} deleted')),
+                                SnackBar(content: Text('${item.name} deleted')),
                               );
                               context.pop();
+                              setState(() => _isDeleting = false);
                             } else {
-                              // 3. Show an error if it failed
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
-                                  content:
-                                  Text('Failed to delete ${item.name}'),
+                                  content: Text('Failed to delete ${item.name}'),
                                   backgroundColor: Colors.redAccent,
                                 ),
                               );
@@ -248,11 +259,38 @@ class _ItemDetailPageState extends ConsumerState<ItemDetailPage>{
           ],
         ),
       ),
+
+            // Loading overlay
+            if (_isConsuming || _isDeleting)
+              Container(
+                color: Colors.black.withOpacity(0.4),
+                child: Center(
+                  child: Container(
+                    padding: const EdgeInsets.all(24),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const CircularProgressIndicator(
+                          color: AppColors.mediumBlue,
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          _isDeleting ? 'Deleting...' : 'Updating...',
+                          style: GoogleFonts.poppins(fontSize: 14),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+          ],
+      ),
     );
-
   }
-
-
 }
 
 class _ItemHeader extends StatelessWidget {

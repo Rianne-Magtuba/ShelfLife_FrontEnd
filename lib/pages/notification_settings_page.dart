@@ -7,6 +7,8 @@ import '../constants/app_constants.dart';
 import '../core/business/providers/inventory_provider.dart';
 import '../core/business/services/inventory_service.dart';
 import '../core/business/services/notification_service.dart';
+import '../core/data/services/cache_service.dart';
+import '../core/data/services/user_data_service.dart';
 import '../widgets/shared_widgets.dart';
 import '../core/common/entities/entities.dart';
 
@@ -19,12 +21,43 @@ class NotificationSettingsPage extends ConsumerStatefulWidget {
 }
 
 class _NotificationSettingsPageState extends ConsumerState<NotificationSettingsPage> {
+
+
   late NotificationSettings _settings;
+  bool _loading = true; // ← add this
 
   @override
   void initState() {
     super.initState();
-    _settings = InventoryService().getNotificationSettings();
+    // ← remove async, just call a separate method without awaiting
+    _settings = NotificationSettings(
+      enabled: true,
+      alertLeadDays: 3,
+      dailyReminderTime: const TimeOfDay(hour: 8, minute: 0),
+      frequency: 'daily',
+    );
+    _loadSettings(); // ← fire and forget
+  }
+
+  Future<void> _loadSettings() async {
+    try {
+      final settings = await UserDataService().getNotificationSettings();
+      if (mounted) {
+        setState(() {
+          _settings = settings;
+          _loading = false;
+        });
+      }
+    } catch (e) {
+      // fall back to cache
+      final settings = CacheService.loadNotificationSettings();
+      if (mounted) {
+        setState(() {
+          _settings = settings;
+          _loading = false;
+        });
+      }
+    }
   }
 
   @override
@@ -63,7 +96,7 @@ class _NotificationSettingsPageState extends ConsumerState<NotificationSettingsP
               ),
             ),
             Expanded(
-              child: ListView(
+            child:  ListView(
                 padding: const EdgeInsets.all(AppSizes.paddingM),
                 children: [
                   _SettingsSection(
@@ -94,154 +127,143 @@ class _NotificationSettingsPageState extends ConsumerState<NotificationSettingsP
                         ),
                       ),
 
-
-
                     ],
                   ),
+
+
+                  // Replace the sections after the General section with this:
+
                   const SizedBox(height: 16),
 
-    AnimatedOpacity(
-    opacity: _settings.frequency == 'realtime' ? 0.4 : 1.0,
-    duration: const Duration(milliseconds: 200),
-    child: IgnorePointer(
-    ignoring: _settings.frequency == 'realtime',
-    child: _SettingsSection(
-                    title: 'Alert Lead Time',
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('Notify me X days before expiry',
-                                style: GoogleFonts.poppins(
-                                    fontSize: 13,
-                                    color: AppColors.textSecondary)),
-                            const SizedBox(height: 12),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: AppStrings.alertLeadTimes.map((days) {
-                                final selected =
-                                    _settings.alertLeadDays == days;
-                                return GestureDetector(
-                                  onTap: () => setState(() => _settings =
-                                      _settings.copyWith(alertLeadDays: days)),
-                                  child: AnimatedContainer(
-                                    duration: const Duration(milliseconds: 200),
-                                    width: 64,
-                                    height: 64,
-                                    decoration: BoxDecoration(
-                                      color: selected
-                                          ? AppColors.mediumBlue
-                                          : Colors.white,
-                                      borderRadius: BorderRadius.circular(
-                                          AppSizes.radiusM),
-                                      border: Border.all(
-                                          color: selected
-                                              ? AppColors.mediumBlue
-                                              : AppColors.divider),
+                  AnimatedOpacity(
+                    opacity: _settings.enabled ? 1.0 : 0.4,
+                    duration: const Duration(milliseconds: 200),
+                    child: IgnorePointer(
+                      ignoring: !_settings.enabled,
+                      child: Column(
+                        children: [
+                          _SettingsSection(
+                            title: 'Alert Lead Time',
+                            children: [
+                              Padding(
+                                padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text('Notify me X days before expiry',
+                                        style: GoogleFonts.poppins(
+                                            fontSize: 13,
+                                            color: AppColors.textSecondary)),
+                                    const SizedBox(height: 12),
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: AppStrings.alertLeadTimes.map((days) {
+                                        final selected = _settings.alertLeadDays == days;
+                                        return GestureDetector(
+                                          onTap: () => setState(() => _settings =
+                                              _settings.copyWith(alertLeadDays: days)),
+                                          child: AnimatedContainer(
+                                            duration: const Duration(milliseconds: 200),
+                                            width: 64,
+                                            height: 64,
+                                            decoration: BoxDecoration(
+                                              color: selected
+                                                  ? AppColors.mediumBlue
+                                                  : Colors.white,
+                                              borderRadius: BorderRadius.circular(
+                                                  AppSizes.radiusM),
+                                              border: Border.all(
+                                                  color: selected
+                                                      ? AppColors.mediumBlue
+                                                      : AppColors.divider),
+                                            ),
+                                            child: Column(
+                                              mainAxisAlignment: MainAxisAlignment.center,
+                                              children: [
+                                                Text('$days',
+                                                    style: GoogleFonts.poppins(
+                                                        fontSize: 22,
+                                                        fontWeight: FontWeight.w700,
+                                                        color: selected
+                                                            ? Colors.white
+                                                            : AppColors.darkBlue)),
+                                                Text('day${days > 1 ? 's' : ''}',
+                                                    style: GoogleFonts.poppins(
+                                                        fontSize: 10,
+                                                        color: selected
+                                                            ? Colors.white70
+                                                            : AppColors.textSecondary)),
+                                              ],
+                                            ),
+                                          ),
+                                        );
+                                      }).toList(),
                                     ),
-                                    child: Column(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      children: [
-                                        Text('$days',
-                                            style: GoogleFonts.poppins(
-                                                fontSize: 22,
-                                                fontWeight: FontWeight.w700,
-                                                color: selected
-                                                    ? Colors.white
-                                                    : AppColors.darkBlue)),
-                                        Text('day${days > 1 ? 's' : ''}',
-                                            style: GoogleFonts.poppins(
-                                                fontSize: 10,
-                                                color: selected
-                                                    ? Colors.white70
-                                                    : AppColors.textSecondary)),
-                                      ],
-                                    ),
-                                  ),
-                                );
-                              }).toList(),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ).animate().fadeIn(delay: 100.ms),
-    ),
-    ),
-                  const SizedBox(height: 16),
-    AnimatedOpacity(
-    opacity: _settings.frequency == 'realtime' ? 0.4 : 1.0,
-    duration: const Duration(milliseconds: 200),
-    child: IgnorePointer(
-    ignoring: _settings.frequency == 'realtime',
-    child: _SettingsSection(
-                    title: 'Daily Reminder',
-                    children: [
-                      ListTile(
-                        leading: const Icon(Icons.access_time,
-                            color: AppColors.mediumBlue),
-                        title: Text('Reminder Time',
-                            style: GoogleFonts.poppins(
-                                fontSize: 14, fontWeight: FontWeight.w500)),
-                        subtitle: Text(
-                            _settings.dailyReminderTime.format(context),
-                            style: GoogleFonts.poppins(
-                                fontSize: 12, color: AppColors.textSecondary)),
-                        trailing: const Icon(Icons.chevron_right,
-                            color: AppColors.textSecondary),
-                        onTap: () async {
-                          final t = await showTimePicker(
-                              context: context,
-                              initialTime: _settings.dailyReminderTime);
-                          if (t != null) {
-                            setState(() => _settings =
-                                _settings.copyWith(dailyReminderTime: t));
-                          }
-                        },
-                      ),
-                    ],
-                  ).animate().fadeIn(delay: 150.ms),
-    ),
-    ),
-                  const SizedBox(height: 16),
-                  _SettingsSection(
-                    title: 'Notification Frequency',
-                    children: [
-                      ...[
-                        (
-                          'once',
-                          'Once per item',
-                          'Send one alert per expiring item'
-                        ),
-                        (
-                          'daily',
-                          'Daily digest',
-                          'Group alerts into one daily summary'
-                        ),
-                        (
-                          'realtime',
-                          'Real-time',
-                          'Notify immediately when expiry is near'
-                        ),
-                      ].map((option) => RadioListTile<String>(
-                            value: option.$1,
-                            groupValue: _settings.frequency,
-                            onChanged: (v) => setState(() =>
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ).animate().fadeIn(delay: 100.ms),
+
+                          const SizedBox(height: 16),
+
+                          _SettingsSection(
+                            title: 'Daily Reminder',
+                            children: [
+                              ListTile(
+                                leading: const Icon(Icons.access_time,
+                                    color: AppColors.mediumBlue),
+                                title: Text('Reminder Time',
+                                    style: GoogleFonts.poppins(
+                                        fontSize: 14, fontWeight: FontWeight.w500)),
+                                subtitle: Text(
+                                    _settings.dailyReminderTime.format(context),
+                                    style: GoogleFonts.poppins(
+                                        fontSize: 12, color: AppColors.textSecondary)),
+                                trailing: const Icon(Icons.chevron_right,
+                                    color: AppColors.textSecondary),
+                                onTap: () async {
+                                  final t = await showTimePicker(
+                                      context: context,
+                                      initialTime: _settings.dailyReminderTime);
+                                  if (t != null) {
+                                    setState(() => _settings =
+                                        _settings.copyWith(dailyReminderTime: t));
+                                  }
+                                },
+                              ),
+                            ],
+                          ).animate().fadeIn(delay: 150.ms),
+
+                          const SizedBox(height: 16),
+
+                          _SettingsSection(
+                            title: 'Notification Frequency',
+                            children: [
+                              ...[
+                                ('once', 'Once per item', 'Send one alert per item'),
+                                ('daily', 'Daily digest', 'Group alerts into one daily summary'),
+                              ].map((option) => RadioListTile<String>(
+                                value: option.$1,
+                                groupValue: _settings.frequency,
+                                onChanged: (v) => setState(() =>
                                 _settings = _settings.copyWith(frequency: v)),
-                            title: Text(option.$2,
-                                style: GoogleFonts.poppins(
-                                    fontSize: 14, fontWeight: FontWeight.w500)),
-                            subtitle: Text(option.$3,
-                                style: GoogleFonts.poppins(
-                                    fontSize: 12,
-                                    color: AppColors.textSecondary)),
-                            activeColor: AppColors.mediumBlue,
-                          )),
-                    ],
-                  ).animate().fadeIn(delay: 200.ms),
+                                title: Text(option.$2,
+                                    style: GoogleFonts.poppins(
+                                        fontSize: 14, fontWeight: FontWeight.w500)),
+                                subtitle: Text(option.$3,
+                                    style: GoogleFonts.poppins(
+                                        fontSize: 12,
+                                        color: AppColors.textSecondary)),
+                                activeColor: AppColors.mediumBlue,
+                              )),
+                            ],
+                          ).animate().fadeIn(delay: 200.ms),
+                        ],
+                      ),
+                    ),
+                  ),
+
                   const SizedBox(height: 28),
                   // // TEMP DEBUG
                   // ElevatedButton(

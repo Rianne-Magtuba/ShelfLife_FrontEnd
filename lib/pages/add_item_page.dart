@@ -278,23 +278,32 @@ class _AddItemPageState extends ConsumerState<AddItemPage>
 
                 ElevatedButton(
                   onPressed: () async {
+                    try {
+                      await InventoryService().sendCorrectionRequest(
+                        barcode:             _barcodeCtrl.text,
+                        proposedName:        _nameCtrl.text,
+                        proposedCategory:    _category.label,
+                        proposedWeightGrams: _weightCtrl.text,
+                        proposedPrice:       _priceCtrl.text,
+                      );
 
-                    await InventoryService().sendCorrectionEmail(
-                      barcode: _barcodeCtrl.text,
-                      currentName: _nameCtrl.text,
-                      currentCategory: _category.label,
-                      currentWeight: _weightCtrl.text,
-
-                      requestedName: _nameCtrl.text,
-                      requestedCategory: _category.label,
-                      requestedWeight: _weightCtrl.text,
-
-                      reason:
-                      '$selectedReason\n\n${changeCtrl.text.trim()}',
-                    );
-
-                    if (context.mounted) {
-                      Navigator.pop(context);
+                      if (context.mounted) {
+                        Navigator.pop(context);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Correction request submitted successfully!'),
+                          ),
+                        );
+                      }
+                    } catch (e) {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(e.toString().replaceFirst('Exception: ', '')),
+                            backgroundColor: Colors.redAccent,
+                          ),
+                        );
+                      }
                     }
                   },
                   child: const Text('Submit'),
@@ -308,7 +317,22 @@ class _AddItemPageState extends ConsumerState<AddItemPage>
   }
 
   void _save() async {
-    if (!_formKey.currentState!.validate()) return;
+    // Only validate unlocked fields
+    final nameEmpty = _nameCtrl.text.trim().isEmpty;
+    final expiryMissing = _useExactDate && _expiryDate == null;
+
+    if (!_isProductLocked && nameEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter a product name')),
+      );
+      return;
+    }
+    if (expiryMissing) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select an expiry date')),
+      );
+      return;
+    }
 
     // ── Resolve expiry date ────────────────────────────────────────────────
     DateTime? resolvedExpiry;

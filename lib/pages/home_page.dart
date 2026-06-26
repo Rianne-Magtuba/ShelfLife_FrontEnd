@@ -43,7 +43,9 @@ class _HomePageState extends ConsumerState<HomePage> {
   @override
 Widget build(BuildContext context) {
   final inventoryAsync = ref.watch(inventoryProvider);
-  final notifCount = ref.watch(notificationsProvider).length;
+  // final notifCount = ref.watch(notificationsProvider)
+  //     .where((n) => !n.isRead)
+  //     .length;
 
   return AppBackground(
     child: Column(
@@ -51,7 +53,7 @@ Widget build(BuildContext context) {
         _HomeHeader(
           username: _username,
           expiredCount: 0,
-          notifCount: notifCount,
+        //  notifCount: notifCount,
         ),
         Expanded(
           child: inventoryAsync.when(
@@ -92,7 +94,7 @@ Widget build(BuildContext context) {
                       const Icon(Icons.add_box_outlined,
                           size: 72, color: AppColors.lightBlue),
                       const SizedBox(height: 16),
-                      Text('Add your Product',
+                      Text('Add your Items',
                           style: GoogleFonts.poppins(
                               fontSize: 18,
                               fontWeight: FontWeight.w600,
@@ -187,12 +189,12 @@ Widget build(BuildContext context) {
 class _HomeHeader extends StatelessWidget {
   final String username;
   final int expiredCount;
-  final int notifCount;
+//  final int notifCount;
 
   const _HomeHeader({
     required this.username,
     required this.expiredCount,
-    required this.notifCount,  // ← add this
+  //  required this.notifCount,  // ← add this
   });
 
   @override
@@ -245,31 +247,9 @@ class _HomeHeader extends StatelessWidget {
               ],
             ),
           ),
-          Stack(
-            children: [
-              IconButton(
-                onPressed: () => context.go(AppRoutes.notifications),
-                icon: const Icon(Icons.notifications_outlined,
-                    color: Colors.white, size: 26),
-              ),
-              if (notifCount > 0)
-                Positioned(
-                  right: 8,
-                  top: 8,
-                  child: Container(
-                    width: 16,
-                    height: 16,
-                    decoration: const BoxDecoration(
-                        color: Colors.red, shape: BoxShape.circle),
-                    alignment: Alignment.center,
-                    child: Text('$notifCount',
-                        style: GoogleFonts.poppins(
-                            fontSize: 9,
-                            fontWeight: FontWeight.w700,
-                            color: Colors.white)),
-                  ),
-                ),
-            ],
+          IconButton(
+            onPressed: () => context.go(AppRoutes.notifications),
+            icon: const Icon(Icons.crisis_alert, color: Colors.white, size: 26),
           ),
         ],
       ),
@@ -402,22 +382,7 @@ class _UrgentAlertCard extends StatelessWidget {
         ),
         child: Row(
           children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(8),
-              child: Image.asset(
-                item.imagePath ?? 'assets/images/placeholder.png',
-                width: 48,
-                height: 48,
-                fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => Container(
-                  width: 48,
-                  height: 48,
-                  color: item.status.color.withOpacity(0.2),
-                  child: Icon(item.category.icon,
-                      color: item.status.color, size: 24),
-                ),
-              ),
-            ),
+
             const SizedBox(width: 12),
             Expanded(
               child: Column(
@@ -491,22 +456,6 @@ class _RecentItemTile extends StatelessWidget {
                     offset: const Offset(0, 3),
                   ),
                 ],
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: Image.asset(
-                  item.imagePath ?? 'assets/images/placeholder.png',
-                  width: 44,
-                  height: 44,
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => Container(
-                    width: 44,
-                    height: 44,
-                    color: AppColors.lightBlue,
-                    child: Icon(item.category.icon,
-                        color: item.category.color, size: 22),
-                  ),
-                ),
               ),
             ),
             const SizedBox(width: 12),
