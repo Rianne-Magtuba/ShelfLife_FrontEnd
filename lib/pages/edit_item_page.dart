@@ -1,5 +1,5 @@
 import 'dart:convert';
-
+import '../core/common/utils/weight_converter.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -56,7 +56,13 @@ class _EditItemPageState extends ConsumerState<EditItemPage> {
 
     _nameCtrl = TextEditingController(text: _item.name);
     _quantityCtrl = TextEditingController(text: '${_item.quantity}');
-    _weightCtrl = TextEditingController(text: _item.weight ?? '');
+    final weightResult = WeightConverter.fromGrams(
+      _item.weight,
+      originalUnit: _item.weightUnit ?? 'g',
+    );
+    _weightCtrl = TextEditingController(
+      text: weightResult?.displayValue ?? '',
+    );
     _notesCtrl = TextEditingController(text: _item.notes ?? '');
     _priceCtrl = TextEditingController(
         text: _item.purchasePrice?.toStringAsFixed(2) ?? '');
@@ -64,7 +70,9 @@ class _EditItemPageState extends ConsumerState<EditItemPage> {
         TextEditingController(text: _item.consumeWithinDays?.toString() ?? '');
 
     _selectedCategory = _item.category;
-    _selectedWeightUnit = _item.weightUnit ?? AppStrings.weightUnits.first;
+    _selectedWeightUnit = weightResult?.displayUnit
+        ?? _item.weightUnit
+        ?? AppStrings.weightUnits.first;
     _expiryDate = _item.expiryDate;
     _purchaseDate = _item.purchaseDate;
 
@@ -305,7 +313,9 @@ class _EditItemPageState extends ConsumerState<EditItemPage> {
       barcode: _barcodeRef ?? '',  // edit page uses inventory ID as reference
       proposedName:        _nameCtrl.text.trim(),
       proposedCategory:    _selectedCategory.label,
-      proposedWeightGrams: _weightCtrl.text.trim(),
+        proposedWeightGrams: WeightConverter.toGrams(
+     _weightCtrl.text.trim(), _selectedWeightUnit)
+      ?.toStringAsFixed(2) ?? _weightCtrl.text.trim(),
       proposedPrice:       _priceCtrl.text.trim(),
     );
 
@@ -329,15 +339,16 @@ class _EditItemPageState extends ConsumerState<EditItemPage> {
       barcodeRef: null,
       customName: _nameCtrl.text.trim(),
       customCategory: _selectedCategory.label,
-      customWeightGrams: _weightCtrl.text.trim().isEmpty
-          ? null
-          : double.tryParse(_weightCtrl.text.trim()),
+        customWeightGrams: _weightCtrl.text.trim().isEmpty
+            ? null
+            : WeightConverter.toGrams(_weightCtrl.text.trim(), _selectedWeightUnit),
       customPrice: _priceCtrl.text.trim().isEmpty
           ? null
           : double.tryParse(_priceCtrl.text.trim()),
       quantity: int.parse(_quantityCtrl.text.trim()),
       quality: 'Good',
-      notes: _notesCtrl.text.trim(),
+      notes: WeightConverter.encodeUnitInNotes(
+          _notesCtrl.text.trim(), _selectedWeightUnit),
       expirationDate: _expiryDate,
     );
 
@@ -461,31 +472,22 @@ class _EditItemPageState extends ConsumerState<EditItemPage> {
                                   controller: _weightCtrl,
                                   label: 'Weight (optional)',
                                   icon: Icons.scale_outlined,
-                                  keyboardType:
-                                      const TextInputType.numberWithOptions(
-                                          decimal: true),
+                                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
                                 ),
                               ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                flex: 2,
+                              SizedBox(width: context.w(0.02)),
+                              SizedBox(
+                                width: context.w(0.33),
                                 child: DropdownButtonFormField<String>(
-                                  initialValue: _selectedWeightUnit,
-                                  decoration: _inputDecoration(
-                                      'Unit', Icons.straighten_outlined),
-                                  style: GoogleFonts.poppins(
-                                      fontSize: 14,
-                                      color: AppColors.textPrimary),
+                                  value: _selectedWeightUnit,
+                                  isExpanded: true,
+                                  decoration: _inputDecoration('Unit', Icons.straighten_outlined),
+                                  style: GoogleFonts.poppins(fontSize: 14, color: AppColors.textPrimary),
                                   items: AppStrings.weightUnits
-                                      .map((u) => DropdownMenuItem(
-                                            value: u,
-                                            child: Text(u),
-                                          ))
+                                      .map((u) => DropdownMenuItem(value: u, child: Text(u)))
                                       .toList(),
                                   onChanged: (v) {
-                                    if (v != null) {
-                                      setState(() => _selectedWeightUnit = v);
-                                    }
+                                    if (v != null) setState(() => _selectedWeightUnit = v);
                                   },
                                 ),
                               ),

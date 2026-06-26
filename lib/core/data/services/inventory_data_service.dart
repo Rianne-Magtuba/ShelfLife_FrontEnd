@@ -140,8 +140,35 @@ class InventoryDataService implements IInventoryDataService {
   Future<void> incrementDiscarded() => CacheService.incrementDiscarded();
 
 
+  @override
+  Future<List<FoodItem>> fetchConsumedItems() async {
+    final response = await ApiClient.get('/api/inventory/consumed');
+    if (response.statusCode == 200) {
+      final jsonList = jsonDecode(response.body) as List<dynamic>;
+      return jsonList
+          .map((j) => InventoryItemResponse
+          .fromJson(j as Map<String, dynamic>)
+          .toFoodItem())
+          .toList();
+    }
+    debugPrint('[InventoryDataService] fetchConsumedItems: ${response.statusCode}');
+    throw Exception(
+        ApiClient.parseError(response, 'Failed to fetch consumed items.'));
+  }
 
-  // ── Notification settings ───────────────────────────────────────────────
-
-
+  @override
+  Future<List<FoodItem>> fetchDiscardedItems() async {
+    final response = await ApiClient.get('/api/inventory/discarded');
+    if (response.statusCode == 200) {
+      final jsonList = jsonDecode(response.body) as List<dynamic>;
+      return jsonList
+          .map((j) => InventoryItemResponse
+          .fromJson(j as Map<String, dynamic>)
+          .toFoodItem())
+          .toList();
+    }
+    debugPrint('[InventoryDataService] fetchDiscardedItems: ${response.statusCode}');
+    throw Exception(
+        ApiClient.parseError(response, 'Failed to fetch discarded items.'));
+  }
 }

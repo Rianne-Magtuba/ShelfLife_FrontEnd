@@ -166,5 +166,21 @@ class InventoryService {
     );
   }
 
+  Future<List<FoodItem>> fetchConsumedItems() async {
+    try {
+      return await _data.fetchConsumedItems();
+    } catch (e) {
+      debugPrint('[InventoryService] fetchConsumedItems failed: $e');
+      return [];
+    }
+  }
 
+  Future<List<FoodItem>> fetchDiscardedItems() async {
+    try {
+      return await _data.fetchDiscardedItems();
+    } catch (e) {
+      debugPrint('[InventoryService] fetchDiscardedItems failed: $e');
+      return [];
+    }
+  }
 }

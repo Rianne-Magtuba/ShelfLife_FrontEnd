@@ -10,35 +10,20 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="e1327d63-42b0-4f65-9b94-2851c9546bc6" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/lib/core/common/utils/weight_converter.dart" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/constants/app_constants.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/constants/app_constants.dart" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/lib/core/business/dtos/inventory_dto.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/core/business/dtos/inventory_dto.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/core/business/dtos/product_dto.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/core/business/dtos/product_dto.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/core/business/dtos/user_dto.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/core/business/dtos/user_dto.dart" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/lib/core/business/providers/inventory_provider.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/core/business/providers/inventory_provider.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/core/business/services/auth_logicservice.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/core/business/services/auth_logicservice.dart" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/lib/core/business/services/inventory_service.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/core/business/services/inventory_service.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/core/business/services/notification_service.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/core/business/services/notification_service.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/core/common/entities/food_item.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/core/common/entities/food_item.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/core/common/entities/notification.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/core/common/entities/notification.dart" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/lib/core/common/interfaces/i_inventory_service.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/core/common/interfaces/i_inventory_service.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/core/common/interfaces/i_user_data_service.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/core/common/interfaces/i_user_data_service.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/core/data/services/cache_service.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/core/data/services/cache_service.dart" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/lib/core/data/services/inventory_data_service.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/core/data/services/inventory_data_service.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/core/data/services/user_data_service.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/core/data/services/user_data_service.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/main.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/main.dart" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/lib/pages/add_item_page.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/pages/add_item_page.dart" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/lib/pages/edit_item_page.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/pages/edit_item_page.dart" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/lib/pages/home_page.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/pages/home_page.dart" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/lib/pages/item_detail_page.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/pages/item_detail_page.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/pages/notification_settings_page.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/pages/notification_settings_page.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/pages/notifications_page.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/pages/notifications_page.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/pages/statistics_page.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/pages/statistics_page.dart" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/lib/widgets/shared_widgets.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/widgets/shared_widgets.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/linux/flutter/generated_plugin_registrant.cc" beforeDir="false" afterPath="$PROJECT_DIR$/linux/flutter/generated_plugin_registrant.cc" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/linux/flutter/generated_plugins.cmake" beforeDir="false" afterPath="$PROJECT_DIR$/linux/flutter/generated_plugins.cmake" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/macos/Flutter/GeneratedPluginRegistrant.swift" beforeDir="false" afterPath="$PROJECT_DIR$/macos/Flutter/GeneratedPluginRegistrant.swift" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pubspec.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/pubspec.yaml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/windows/flutter/generated_plugin_registrant.cc" beforeDir="false" afterPath="$PROJECT_DIR$/windows/flutter/generated_plugin_registrant.cc" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/windows/flutter/generated_plugins.cmake" beforeDir="false" afterPath="$PROJECT_DIR$/windows/flutter/generated_plugins.cmake" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -103,7 +88,7 @@
     "cf.first.check.clang-format": "false",
     "cidr.known.project.marker": "true",
     "dart.analysis.tool.window.visible": "false",
-    "git-widget-placeholder": "main",
+    "git-widget-placeholder": "feature/finalizing-fixes-2",
     "ignore.virus.scanning.warn.message": "true",
     "io.flutter.project.isFirstOpen": "true",
     "kotlin-language-version-configured": "true",

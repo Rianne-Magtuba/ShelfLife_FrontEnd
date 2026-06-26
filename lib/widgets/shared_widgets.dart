@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../constants/app_constants.dart';
 import '../core/common/entities/entities.dart';
+import '../core/common/utils/weight_converter.dart';
 
 // ─── Gradient Background ──────────────────────────────────────────────────────
 
@@ -210,7 +211,9 @@ class FoodItemCard extends StatelessWidget {
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          '${item.category.label} • ${item.quantity} ${item.weight != null ? "${item.weight} ${item.weightUnit}" : "pcs"}',
+                          '${item.category.label} • ${item.quantity} pc/s • ${item.weight != null
+                              ? WeightConverter.formatWeightDisplay(item.weight, originalUnit: item.weightUnit ?? 'g')
+                              : "pcs"}',
                           style: GoogleFonts.poppins(
                               fontSize: 12, color: AppColors.textSecondary),
                         ),
@@ -793,6 +796,107 @@ class ProductBasicFields extends StatelessWidget {
           validator: (v) => v == null ? 'Required' : null,
         ),
       ],
+    );
+  }
+}
+
+// ------ app dropdown
+
+class AppDropdown extends StatelessWidget {
+  final String? value;
+  final String label;
+  final IconData? icon;
+  final List<String> items;
+  final ValueChanged<String?> onChanged;
+  final bool enabled;
+
+  const AppDropdown({
+    super.key,
+    required this.value,
+    required this.label,
+    required this.items,
+    required this.onChanged,
+    this.icon,
+    this.enabled = true,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return DropdownButtonFormField<String>(
+      value: value,
+      isExpanded: true,
+
+      menuMaxHeight: 250,
+
+      icon: const Icon(
+        Icons.keyboard_arrow_down_rounded,
+        color: AppColors.mediumBlue,
+      ),
+
+      style: GoogleFonts.poppins(
+        fontSize: 14,
+        color: AppColors.textPrimary,
+        fontWeight: FontWeight.w500,
+      ),
+
+      decoration: InputDecoration(
+        labelText: label,
+        prefixIcon: icon == null
+            ? null
+            : Icon(
+          icon,
+          color: AppColors.mediumBlue,
+        ),
+
+        filled: true,
+        fillColor: AppColors.inputBg,
+
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 16,
+        ),
+
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppSizes.radiusM),
+          borderSide: const BorderSide(color: AppColors.divider),
+        ),
+
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppSizes.radiusM),
+          borderSide: const BorderSide(color: AppColors.divider),
+        ),
+
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppSizes.radiusM),
+          borderSide: const BorderSide(
+            color: AppColors.mediumBlue,
+            width: 2,
+          ),
+        ),
+      ),
+
+      items: items.map((item) {
+        return DropdownMenuItem<String>(
+          value: item,
+
+          child: Align(
+            alignment: Alignment.centerLeft,
+            child: Text(
+              item,
+              style: GoogleFonts.poppins(
+                fontSize: 14,
+                color: AppColors.textPrimary,
+              ),
+            ),
+          ),
+        );
+      }).toList(),
+
+      onChanged: enabled ? onChanged : null,
+
+      borderRadius: BorderRadius.circular(14),
+
+      dropdownColor: Colors.white,
     );
   }
 }

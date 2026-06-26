@@ -11,6 +11,9 @@ import '../widgets/shared_widgets.dart';
 import '../core/common/entities/entities.dart';
 import '../core/business/providers/inventory_provider.dart';
 import 'package:collection/collection.dart';
+import '../core/common/utils/weight_converter.dart';
+
+
 class ItemDetailPage extends ConsumerStatefulWidget {
   final String itemId;
 
@@ -93,8 +96,12 @@ class _ItemDetailPageState extends ConsumerState<ItemDetailPage>{
                         _InfoRow(label: 'Quantity', value: '${item.quantity}'),
                         if (item.weight != null)
                           _InfoRow(
-                              label: 'Weight',
-                              value: '${item.weight} ${item.weightUnit}'),
+                            label: 'Weight',
+                            value: WeightConverter.formatWeightDisplay(
+                              item.weight,
+                              originalUnit: item.weightUnit ?? 'g',
+                            ),
+                          ),
                         _InfoRow(
                             label: 'Date Added',
                             value: DateFormat('MMMM d, yyyy')

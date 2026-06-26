@@ -21,4 +21,9 @@ abstract class IInventoryDataService {
   Future<void> incrementDiscarded();
   Future<bool> consumeItem(String inventoryId);
 
+
+  // ← ADD THESE TWO
+  Future<List<FoodItem>> fetchConsumedItems();
+  Future<List<FoodItem>> fetchDiscardedItems();
+
 }
