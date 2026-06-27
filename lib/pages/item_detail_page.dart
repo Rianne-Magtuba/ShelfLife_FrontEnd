@@ -86,7 +86,7 @@ class _ItemDetailPageState extends ConsumerState<ItemDetailPage>{
                         ),
                       ],
                     ).animate().fadeIn(),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 5),
                     // Info cards
                     _InfoCard(
                       title: 'Basic Info',
@@ -108,7 +108,7 @@ class _ItemDetailPageState extends ConsumerState<ItemDetailPage>{
                                 .format(item.dateAdded)),
                       ],
                     ).animate().fadeIn(delay: 100.ms),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 1),
                     _InfoCard(
                       title: 'Expiry Details',
                       children: [
@@ -162,44 +162,29 @@ class _ItemDetailPageState extends ConsumerState<ItemDetailPage>{
                       onPressed: _isConsuming
                           ? null
                           : () async {
-                        setState(() {
-                          _isConsuming = true;
-                        });
+                        setState(() => _isConsuming = true);
 
-                        try {
-                          final success = await ref
-                              .read(inventoryProvider.notifier)
-                              .consumeItem(item.id);
+                        final success = await ref
+                            .read(inventoryProvider.notifier)
+                            .consumeItem(item.id);
 
-                          if (!mounted) return;
+                        if (!mounted) return;
 
-                          if (success) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                  '${item.name} marked as consumed!',
-                                ),
-                              ),
-                            );
+                        setState(() => _isConsuming = false);
 
-                            context.pop();
-                            setState(() => _isConsuming = false);
-                          } else {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Failed to mark as consumed'),
-                                backgroundColor: Colors.redAccent,
-                              ),
-                            );
-
-
-                          }
-                        } finally {
-                          if (mounted) {
-                            setState(() {
-                              _isConsuming = false;
-                            });
-                          }
+                        if (success) {
+                          // Show BEFORE pop
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('${item.name} marked as consumed!')),
+                          );
+                          context.pop();
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Failed to mark as consumed'),
+                              backgroundColor: Colors.redAccent,
+                            ),
+                          );
                         }
                       },
                       icon: const Icon(Icons.check_circle_outline),
@@ -218,30 +203,31 @@ class _ItemDetailPageState extends ConsumerState<ItemDetailPage>{
                           item.name,
                           isExpired,
                         );
-                        if (confirmed == true && context.mounted) {
-                          setState(() => _isDeleting = true);  // add this
+                        if (confirmed != true) return;
 
-                          final success = await ref
-                              .read(inventoryProvider.notifier)
-                              .discardItem(item.id);
+                        setState(() => _isDeleting = true);
 
-                          if (context.mounted) {
-                            setState(() => _isDeleting = false);  // add this
-                            if (success) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text('${item.name} deleted')),
-                              );
-                              context.pop();
-                              setState(() => _isDeleting = false);
-                            } else {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text('Failed to delete ${item.name}'),
-                                  backgroundColor: Colors.redAccent,
-                                ),
-                              );
-                            }
-                          }
+                        final success = await ref
+                            .read(inventoryProvider.notifier)
+                            .discardItem(item.id);
+
+                        if (!mounted) return;
+
+                        setState(() => _isDeleting = false);
+
+                        if (success) {
+                          // Show snackbar BEFORE popping so the scaffold is still alive
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('${item.name} deleted')),
+                          );
+                          context.pop();
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Failed to delete ${item.name}'),
+                              backgroundColor: Colors.redAccent,
+                            ),
+                          );
                         }
                       },
                       icon: const Icon(Icons.delete_outline,

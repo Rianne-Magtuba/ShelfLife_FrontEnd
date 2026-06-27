@@ -400,7 +400,7 @@ class _EditItemPageState extends ConsumerState<EditItemPage> {
               child: Form(
                 key: _formKey,
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(AppSizes.paddingM),
+                  padding: const EdgeInsets.all(AppSizes.paddingS),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -489,7 +489,7 @@ class _EditItemPageState extends ConsumerState<EditItemPage> {
                                     absorbing: _isProductLocked,
                                     child: _field(
                                       controller: _weightCtrl,
-                                      label: 'Weight (optional)',
+                                      label: 'Weight',
                                       icon: Icons.scale_outlined,
                                       keyboardType: const TextInputType.numberWithOptions(decimal: true),
                                     ),
@@ -529,7 +529,7 @@ class _EditItemPageState extends ConsumerState<EditItemPage> {
                         ],
                       ).animate().fadeIn(),
 
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 1),
 
                       // ── Expiry Details ──────────────────────────────────
                       _SectionCard(
@@ -558,7 +558,7 @@ class _EditItemPageState extends ConsumerState<EditItemPage> {
                         ],
                       ).animate().fadeIn(delay: 80.ms),
 
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 1),
 
                       // ── Finance ─────────────────────────────────────────
                       _SectionCard(
@@ -578,12 +578,11 @@ class _EditItemPageState extends ConsumerState<EditItemPage> {
                               return null;
                             },
                           ),
-                          const SizedBox(height: 12),
 
                         ],
                       ).animate().fadeIn(delay: 160.ms),
 
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 1),
 
                       // ── Notes ───────────────────────────────────────────
                       _SectionCard(
@@ -599,7 +598,7 @@ class _EditItemPageState extends ConsumerState<EditItemPage> {
                         ],
                       ).animate().fadeIn(delay: 240.ms),
 
-                      const SizedBox(height: 24),
+                      const SizedBox(height: 5),
 
                       PrimaryButton(
                         label: 'Save Changes',

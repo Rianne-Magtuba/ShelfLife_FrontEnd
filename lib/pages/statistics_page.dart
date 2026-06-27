@@ -36,52 +36,58 @@ class _StatisticsPageState extends ConsumerState<StatisticsPage> {
 
     // ── Loading ─────────────────────────────────────────────────────────
     if (asyncData.isLoading) {
-      return AppBackground(
-        child: Column(
-          children: [
-            const StatisticsHeader(),
-            const Expanded(
-              child: Center(
-                child: CircularProgressIndicator(color: AppColors.mediumBlue),
+      return Scaffold(                          // ← add Scaffold
+        backgroundColor: Colors.transparent,
+        body: AppBackground(
+          child: Column(
+            children: [
+              const StatisticsHeader(),
+              const Expanded(
+                child: Center(
+                  child: CircularProgressIndicator(color: AppColors.mediumBlue),
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       );
     }
 
-    // ── Error ────────────────────────────────────────────────────────────
+// ── Error ────────────────────────────────────────────────────────────
     if (asyncData.hasError) {
-      return AppBackground(
-        child: Column(
-          children: [
-            const StatisticsHeader(),
-            Expanded(
-              child: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(Icons.wifi_off_rounded,
-                        size: 52, color: AppColors.textSecondary),
-                    const SizedBox(height: 12),
-                    Text(
-                      'Could not load statistics',
-                      style: GoogleFonts.poppins(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.textSecondary),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      'Check your connection and try again.',
-                      style: GoogleFonts.poppins(
-                          fontSize: 13, color: AppColors.textSecondary),
-                    ),
-                  ],
+      return Scaffold(                          // ← add Scaffold
+        backgroundColor: Colors.transparent,
+        body: AppBackground(
+          child: Column(
+            children: [
+              const StatisticsHeader(),
+              Expanded(
+                child: Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.wifi_off_rounded,
+                          size: 52, color: AppColors.textSecondary),
+                      const SizedBox(height: 12),
+                      Text(
+                        'Could not load statistics',
+                        style: GoogleFonts.poppins(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.textSecondary),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        'Check your connection and try again.',
+                        style: GoogleFonts.poppins(
+                            fontSize: 13, color: AppColors.textSecondary),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       );
     }
@@ -90,32 +96,35 @@ class _StatisticsPageState extends ConsumerState<StatisticsPage> {
     final data = asyncData.value!;
 
     if (data.isEmpty) {
-      return AppBackground(
-        child: Column(
-          children: [
-            const StatisticsHeader(),
-            Expanded(
-              child: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(Icons.bar_chart,
-                        size: 72, color: AppColors.lightBlue),
-                    const SizedBox(height: 16),
-                    Text('Not enough data yet',
-                        style: GoogleFonts.poppins(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.textSecondary)),
-                    const SizedBox(height: 8),
-                    Text('Add items to your pantry to see insights.',
-                        style: GoogleFonts.poppins(
-                            fontSize: 13, color: AppColors.textSecondary)),
-                  ],
+      return Scaffold(                          // ← add Scaffold
+        backgroundColor: Colors.transparent,
+        body: AppBackground(
+          child: Column(
+            children: [
+              const StatisticsHeader(),
+              Expanded(
+                child: Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.bar_chart,
+                          size: 72, color: AppColors.lightBlue),
+                      const SizedBox(height: 16),
+                      Text('Not enough data yet',
+                          style: GoogleFonts.poppins(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.textSecondary)),
+                      const SizedBox(height: 8),
+                      Text('Add items to your pantry to see insights.',
+                          style: GoogleFonts.poppins(
+                              fontSize: 13, color: AppColors.textSecondary)),
+                    ],
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       );
     }
@@ -553,7 +562,7 @@ class _MetricCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(AppSizes.radiusL),
           boxShadow: [
             BoxShadow(
-              color: AppColors.mediumBlue.withOpacity(0.07),
+              color: AppColors.mediumBlue.withOpacity(0.3),
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),
@@ -594,7 +603,7 @@ class _SectionCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(AppSizes.radiusL),
         boxShadow: [
           BoxShadow(
-            color: AppColors.mediumBlue.withOpacity(0.07),
+            color: AppColors.mediumBlue.withOpacity(0.3),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
